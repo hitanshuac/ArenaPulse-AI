@@ -1,0 +1,32 @@
+# Keepalive Cron — Pings the HF Space every 25 minutes to prevent sleep
+# The free tier sleeps after ~48 hours of no traffic. This keeps it warm.
+name: Keepalive Ping
+
+on:
+  schedule:
+    # Every 25 minutes (HF sleeps after extended inactivity)
+    - cron: '*/25 * * * *'
+  workflow_dispatch: # Manual trigger
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Health Endpoint
+        env:
+          # Set this in GitHub repo Settings → Secrets → Actions
+          # Format: https://<username>-<spacename>.hf.space
+          HF_SPACE_URL: ${{ secrets.HF_SPACE_URL }}
+        run: |
+          if [ -z "$HF_SPACE_URL" ]; then
+            echo "⚠️  HF_SPACE_URL secret not set. Skipping."
+            exit 0
+          fi
+          echo "Pinging $HF_SPACE_URL/health ..."
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$HF_SPACE_URL/health" --max-time 30 || echo "000")
+          echo "Response: HTTP $HTTP_CODE"
+          if [ "$HTTP_CODE" = "200" ]; then
+            echo "✅ Space is alive."
+          else
+            echo "⚠️  Space returned HTTP $HTTP_CODE (may be waking up)."
+          fi

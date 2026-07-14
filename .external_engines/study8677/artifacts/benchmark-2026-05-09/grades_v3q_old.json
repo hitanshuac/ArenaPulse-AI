@@ -1,0 +1,209 @@
+{
+  "fa-deprec": {
+    "antigravity": {
+      "accuracy": 2,
+      "citations": 1,
+      "completeness": 1,
+      "insight": 2,
+      "note": "Correctly identifies some major drift such as on_event, openapi_prefix, regex, and example, but misses deprecated responses, generate_operation_id helpers, routes, extra kwargs, Schema.example, solve_dependencies, and compat-removal markers."
+    },
+    "codex": {
+      "accuracy": 3,
+      "citations": 3,
+      "completeness": 3,
+      "insight": 3,
+      "note": "Exhaustive and well-cited across decorators, warnings, annotated deprecations, compatibility comments, tests, and internal call-through drift."
+    },
+    "claude": {
+      "accuracy": 2,
+      "citations": 3,
+      "completeness": 2,
+      "insight": 3,
+      "note": "Strong citations and good non-obvious drift observations, but it omits several marked surfaces including routes, startup/shutdown args, extra kwargs, Schema.example, solve_dependencies, and Pydantic-v1 compat helpers."
+    }
+  },
+  "fa-input-trust": {
+    "antigravity": {
+      "accuracy": 3,
+      "citations": 2,
+      "completeness": 3,
+      "insight": 3,
+      "note": "Accurately maps all normal HTTP input categories, the routing/dependency validation chokepoint, and major bypasses, though citations are mostly file/function level without line numbers."
+    },
+    "codex": {
+      "accuracy": 3,
+      "citations": 3,
+      "completeness": 3,
+      "insight": 3,
+      "note": "Precise, line-cited trace from APIRoute construction through parsing, dependency solving, validation, endpoint execution, and intentional bypass surfaces."
+    },
+    "claude": {
+      "accuracy": 2,
+      "citations": 3,
+      "completeness": 2,
+      "insight": 2,
+      "note": "Mostly correct and well-cited for the core chokepoint, but it undercovers security dependencies, middleware/mount escape hatches, and slightly overstates route_class as a request-class swap."
+    }
+  },
+  "fa-export-coverage": {
+    "antigravity": {
+      "accuracy": 1,
+      "citations": 1,
+      "completeness": 1,
+      "insight": 1,
+      "note": "It invents many direct test-file matches that do not exist and excludes status, leaving the actual 18-name gap mostly wrong."
+    },
+    "codex": {
+      "accuracy": 3,
+      "citations": 3,
+      "completeness": 3,
+      "insight": 3,
+      "note": "Correctly counts the top-level re-exports and identifies only Path and Query as direct file-name matches."
+    },
+    "claude": {
+      "accuracy": 3,
+      "citations": 3,
+      "completeness": 3,
+      "insight": 3,
+      "note": "Correctly enumerates all 20 re-exported names, the two direct matches, and frames the remaining gap as naming rather than necessarily behavioral coverage."
+    }
+  },
+  "rq-tls-bypass": {
+    "antigravity": {
+      "accuracy": 3,
+      "citations": 2,
+      "completeness": 2,
+      "insight": 2,
+      "note": "Covers all requested TLS weakening categories accurately, but lacks line citations and misses subtler paths such as direct Session.send verify=None and falsy non-bool values."
+    },
+    "codex": {
+      "accuracy": 3,
+      "citations": 3,
+      "completeness": 3,
+      "insight": 3,
+      "note": "Most complete answer, including accepted values, env precedence, inheritance, prepared-send behavior, falsy loopholes, custom adapters, mount prefix overmatch, redirects, and HTTP-only behavior."
+    },
+    "claude": {
+      "accuracy": 3,
+      "citations": 3,
+      "completeness": 2,
+      "insight": 3,
+      "note": "Accurate and well-cited for the main surfaces and silent degradations, but it misses the direct send verify=None/falsy-value edge cases and mount-prefix overmatch."
+    }
+  },
+  "rq-redirect-leak": {
+    "antigravity": {
+      "accuracy": 3,
+      "citations": 2,
+      "completeness": 3,
+      "insight": 3,
+      "note": "Accurately traces auth stripping, cookie rebuilding, method/body rewriting, 307/308 replay, and cookie-domain leak cases, but without concrete line citations."
+    },
+    "codex": {
+      "accuracy": 3,
+      "citations": 3,
+      "completeness": 3,
+      "insight": 3,
+      "note": "Complete and precisely cited, including auth/netrc behavior, cookie header rebuilding and supercookie risk, body replay on 307/308, and tests."
+    },
+    "claude": {
+      "accuracy": 2,
+      "citations": 3,
+      "completeness": 2,
+      "insight": 2,
+      "note": "Strong on Authorization and 307/308 body replay, but its cookie analysis incorrectly rules out cross-host cookie leakage from jar/domainless cookies."
+    }
+  },
+  "rq-mutable-default": {
+    "antigravity": {
+      "accuracy": 0,
+      "citations": 0,
+      "completeness": 0,
+      "insight": 0,
+      "note": "The answer timed out and provides generic project snippets rather than auditing shared mutable state."
+    },
+    "codex": {
+      "accuracy": 3,
+      "citations": 3,
+      "completeness": 2,
+      "insight": 2,
+      "note": "Accurately identifies most module/class/per-session mutable state and the PreparedRequest hook aliasing hazard, but misses the caller proxies dict mutation and returned Response mutability."
+    },
+    "claude": {
+      "accuracy": 2,
+      "citations": 3,
+      "completeness": 3,
+      "insight": 3,
+      "note": "Very complete and insightful on proxy mutation, session caches, response mutability, and hook aliasing, but overstates HEADER_VALIDATORS as affecting runtime validation."
+    }
+  },
+  "sm-typegap": {
+    "antigravity": {
+      "accuracy": 2,
+      "citations": 1,
+      "completeness": 2,
+      "insight": 2,
+      "note": "It captures much of the mapping and many gaps, but incorrectly says datetime.time is unsupported and gives only coarse citations."
+    },
+    "codex": {
+      "accuracy": 3,
+      "citations": 3,
+      "completeness": 2,
+      "insight": 2,
+      "note": "Accurate and well-cited for the explicit map and common container/union gaps, but less exhaustive on Literal, Any, bytearray, and multi-arm optional-union edge cases."
+    },
+    "claude": {
+      "accuracy": 3,
+      "citations": 3,
+      "completeness": 3,
+      "insight": 3,
+      "note": "Most exhaustive answer, correctly covering the explicit map, Optional/Annotated handling, containers, JSON gaps, Literal/Any TypeErrors, and multi-arm union failures."
+    }
+  },
+  "sm-state-leak": {
+    "antigravity": {
+      "accuracy": 0,
+      "citations": 0,
+      "completeness": 0,
+      "insight": 0,
+      "note": "The answer timed out and gives unrelated repository/tooling snippets rather than identifying SQLModel global-state side effects."
+    },
+    "codex": {
+      "accuracy": 3,
+      "citations": 3,
+      "completeness": 3,
+      "insight": 3,
+      "note": "Accurately enumerates import-time registry/context/cache state, table-class metaclass mutations, registry/metadata conflicts, and model_validate instantiation effects."
+    },
+    "claude": {
+      "accuracy": 3,
+      "citations": 3,
+      "completeness": 3,
+      "insight": 3,
+      "note": "Excellent synthesis of default registry leakage, ContextVar behavior, metaclass mutations, relationship/class-registry side effects, instantiation effects, and cache opt-ins."
+    }
+  },
+  "sm-sql-injection": {
+    "antigravity": {
+      "accuracy": 3,
+      "citations": 1,
+      "completeness": 2,
+      "insight": 2,
+      "note": "The main conclusion and high-risk SQLAlchemy escape hatches are correct, but it lacks line citations and misses several specific expression-wrapper string surfaces."
+    },
+    "codex": {
+      "accuracy": 3,
+      "citations": 3,
+      "completeness": 3,
+      "insight": 3,
+      "note": "Exhaustive and well-cited across model identifiers, Field and Relationship passthroughs, sync/async execution, SQL expression wrappers, raw-SQL re-exports, and docs examples."
+    },
+    "claude": {
+      "accuracy": 3,
+      "citations": 3,
+      "completeness": 3,
+      "insight": 3,
+      "note": "Accurate, well-cited, and insightful about SQLModel's lack of internal concatenation, SQLAlchemy quoting/binding, raw SQL re-exports, and caller-burden identifier surfaces."
+    }
+  }
+}

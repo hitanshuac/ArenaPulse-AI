@@ -1,0 +1,278 @@
+{
+  "fa-tour": {
+    "antigravity": {
+      "accuracy": 1,
+      "citations": 2,
+      "depth": 1,
+      "verify": 1,
+      "note": "Spot-checked fastapi/pyproject.toml and docs/: core module tour is mostly right, but it falsely says docs/scripts/translations were not visible and omits major top-level areas."
+    },
+    "codex": {
+      "accuracy": 3,
+      "citations": 3,
+      "depth": 3,
+      "verify": 3,
+      "note": "Spot-checked applications.py, routing.py, docs/language_names.yml, and scripts/test.sh; the tour accurately connects core, docs, translations, tests, and automation."
+    },
+    "claude": {
+      "accuracy": 3,
+      "citations": 2,
+      "depth": 3,
+      "verify": 2,
+      "note": "Spot-checked package layout and Starlette/Pydantic modules; strong synthesis, with only minor drift around fastapi-slim/package-shipping and Pydantic-v1 wording."
+    }
+  },
+  "fa-conv": {
+    "antigravity": {
+      "accuracy": 1,
+      "citations": 1,
+      "depth": 0,
+      "verify": 1,
+      "note": "Spot-checked pyproject.toml and .pre-commit-config.yaml; it largely refuses and misses Ruff, mypy/ty, dependency groups, and CI enforcement despite available config."
+    },
+    "codex": {
+      "accuracy": 3,
+      "citations": 3,
+      "depth": 3,
+      "verify": 3,
+      "note": "Spot-checked pyproject tooling sections, scripts/lint.sh, and pre-commit; accurate and complete with minor Black/Ruff nuance handled correctly."
+    },
+    "claude": {
+      "accuracy": 3,
+      "citations": 2,
+      "depth": 3,
+      "verify": 3,
+      "note": "Spot-checked pyproject and scripts/lint.sh; accurate synthesis of PDM, Ruff, mypy/ty, pytest, dependency groups, and pre-commit, though citations are less concrete."
+    }
+  },
+  "fa-cidocs": {
+    "antigravity": {
+      "accuracy": 1,
+      "citations": 0,
+      "depth": 1,
+      "verify": 1,
+      "note": "Spot-checked workflows and pyproject; timeout snippets mention some true pieces but do not walk the release/docs pipeline and even misstate formatting with Black."
+    },
+    "codex": {
+      "accuracy": 3,
+      "citations": 3,
+      "depth": 3,
+      "verify": 3,
+      "note": "Spot-checked publish.yml, test.yml, build/deploy docs workflows, pre-commit, and dependabot; release, docs, and security gates are accurately synthesized."
+    },
+    "claude": {
+      "accuracy": 3,
+      "citations": 2,
+      "depth": 2,
+      "verify": 3,
+      "note": "Spot-checked publish/test/docs workflows and Smokeshow; the main pipeline is right, but it undercovers security hardening such as zizmor, action pinning, and Dependabot."
+    }
+  },
+  "fa-deps": {
+    "antigravity": {
+      "accuracy": 2,
+      "citations": 2,
+      "depth": 2,
+      "verify": 2,
+      "note": "Spot-checked re-export modules, routing, params, and _compat/v2; Starlette layering is mostly right but Pydantic-v2 internals are hand-waved."
+    },
+    "codex": {
+      "accuracy": 3,
+      "citations": 3,
+      "depth": 3,
+      "verify": 3,
+      "note": "Spot-checked __init__, responses, datastructures, routing, background, and _compat/v2; the re-export/extension/Pydantic boundaries are fully accurate."
+    },
+    "claude": {
+      "accuracy": 3,
+      "citations": 3,
+      "depth": 3,
+      "verify": 3,
+      "note": "Spot-checked concurrency, routing, params, _compat/v2, and OpenAPI modules; the three-layer synthesis is accurate and detailed."
+    }
+  },
+  "rq-tour": {
+    "antigravity": {
+      "accuracy": 1,
+      "citations": 1,
+      "depth": 1,
+      "verify": 1,
+      "note": "Spot-checked src layout, docs, ext, and tests; it guesses many module roles correctly but refuses top-level areas and lacks the public call-flow detail."
+    },
+    "codex": {
+      "accuracy": 3,
+      "citations": 3,
+      "depth": 3,
+      "verify": 3,
+      "note": "Spot-checked pyproject src layout, __init__, api, sessions, adapters, docs, and tests; the layout and request-flow layering are accurate."
+    },
+    "claude": {
+      "accuracy": 3,
+      "citations": 2,
+      "depth": 3,
+      "verify": 3,
+      "note": "Spot-checked ext assets, package __all__, api.py, sessions, and adapters; comprehensive and accurate with fewer concrete citations than codex."
+    }
+  },
+  "rq-conv": {
+    "antigravity": {
+      "accuracy": 1,
+      "citations": 1,
+      "depth": 0,
+      "verify": 1,
+      "note": "Spot-checked pyproject and workflows; it only notes setup.py's Python guard and misses Ruff, Pyright, CodeQL, zizmor, pinning, and permissions."
+    },
+    "codex": {
+      "accuracy": 3,
+      "citations": 3,
+      "depth": 3,
+      "verify": 3,
+      "note": "Spot-checked pyproject, pre-commit, lint/typecheck, CodeQL, zizmor, publish, and dependabot; the quality/security posture is accurate and well cited."
+    },
+    "claude": {
+      "accuracy": 3,
+      "citations": 3,
+      "depth": 3,
+      "verify": 3,
+      "note": "Spot-checked Ruff/Pyright config, security workflows, action SHAs, and permissions; accurate and detailed across quality and hardening."
+    }
+  },
+  "rq-testing": {
+    "antigravity": {
+      "accuracy": 2,
+      "citations": 0,
+      "depth": 2,
+      "verify": 2,
+      "note": "Spot-checked run-tests.yml, pyproject, requirements-dev, and conftest; the snippets capture the broad pytest/matrix story but lack concrete fixture and HTTP details."
+    },
+    "codex": {
+      "accuracy": 3,
+      "citations": 3,
+      "depth": 3,
+      "verify": 3,
+      "note": "Spot-checked Makefile, pyproject, run-tests matrix, conftest, testserver, and lowlevel tests; coverage of frameworks, variants, and local HTTP integration is accurate."
+    },
+    "claude": {
+      "accuracy": 3,
+      "citations": 3,
+      "depth": 3,
+      "verify": 3,
+      "note": "Spot-checked requirements-dev, tox, conftest, run-tests.yml, and testserver; excellent synthesis of fixtures, matrix variants, and no-live-network integration."
+    }
+  },
+  "rq-deps": {
+    "antigravity": {
+      "accuracy": 1,
+      "citations": 0,
+      "depth": 0,
+      "verify": 1,
+      "note": "Spot-checked pyproject, models.py, adapters.py, and certs.py; it names dependencies but does not explain their lifecycle roles or urllib3 boundaries."
+    },
+    "codex": {
+      "accuracy": 3,
+      "citations": 3,
+      "depth": 3,
+      "verify": 3,
+      "note": "Spot-checked IDNA URL preparation, certifi CA flow, charset detection, adapter urlopen, and redirect/preload flags; roles and boundaries are accurate."
+    },
+    "claude": {
+      "accuracy": 3,
+      "citations": 3,
+      "depth": 3,
+      "verify": 3,
+      "note": "Spot-checked adapters.py, certs.py, compat.py, and models.py; dependency roles and Requests-vs-urllib3 ownership are accurately explained."
+    }
+  },
+  "sm-tour": {
+    "antigravity": {
+      "accuracy": 2,
+      "citations": 1,
+      "depth": 2,
+      "verify": 2,
+      "note": "Spot-checked sqlmodel/main.py, _compat.py, session wrappers, and sql modules; file-level tour is mostly right but generic and misses concrete bridge mechanics."
+    },
+    "codex": {
+      "accuracy": 3,
+      "citations": 3,
+      "depth": 3,
+      "verify": 3,
+      "note": "Spot-checked __init__, main.py metaclass/Field/Column path, _compat, sessions, select generation, and sqltypes; complete and verifiable."
+    },
+    "claude": {
+      "accuracy": 3,
+      "citations": 2,
+      "depth": 3,
+      "verify": 2,
+      "note": "Spot-checked package modules and bridge code; strong synthesis, with a minor false claim that pool/__init__.py is empty."
+    }
+  },
+  "sm-conv": {
+    "antigravity": {
+      "accuracy": 1,
+      "citations": 1,
+      "depth": 1,
+      "verify": 1,
+      "note": "Spot-checked pyproject, pre-commit, scripts, workflows, and tests; it mostly refuses conventions and only lists some tests."
+    },
+    "codex": {
+      "accuracy": 3,
+      "citations": 3,
+      "depth": 3,
+      "verify": 3,
+      "note": "Spot-checked pyproject, scripts, test workflow, conftest, release notes, and _compat/main.py; conventions and Pydantic-v2 compatibility are accurate."
+    },
+    "claude": {
+      "accuracy": 3,
+      "citations": 3,
+      "depth": 3,
+      "verify": 3,
+      "note": "Spot-checked Python classifiers, Ruff/ty config, test workflow, coverage, and Pydantic version gates; accurate and comprehensive."
+    }
+  },
+  "sm-bridge": {
+    "antigravity": {
+      "accuracy": 3,
+      "citations": 1,
+      "depth": 3,
+      "verify": 3,
+      "note": "Spot-checked SQLModelMetaclass, FieldInfo, get_column_from_field, _compat validation, and Session.exec; architectural split is accurate despite sparse citations."
+    },
+    "codex": {
+      "accuracy": 3,
+      "citations": 3,
+      "depth": 3,
+      "verify": 3,
+      "note": "Spot-checked metaclass construction, field-to-column conversion, relationship handling, validation shell, and __setattr__; excellent accurate synthesis."
+    },
+    "claude": {
+      "accuracy": 3,
+      "citations": 3,
+      "depth": 3,
+      "verify": 3,
+      "note": "Spot-checked metaclass __new__/__init__, ContextVar partial init, and __setattr__; excellent explanation of lifecycle coordination."
+    }
+  },
+  "sm-onboard": {
+    "antigravity": {
+      "accuracy": 2,
+      "citations": 1,
+      "depth": 2,
+      "verify": 2,
+      "note": "Spot-checked main.py field plumbing and constraint tests; guidance points to the right areas but stays generic and avoids actual function names."
+    },
+    "codex": {
+      "accuracy": 3,
+      "citations": 3,
+      "depth": 3,
+      "verify": 3,
+      "note": "Spot-checked FieldInfo, FieldInfoMetadata, Field overloads, get_column_from_field, and related tests; concrete onboarding guidance is accurate."
+    },
+    "claude": {
+      "accuracy": 3,
+      "citations": 3,
+      "depth": 3,
+      "verify": 3,
+      "note": "Spot-checked the same field plumbing plus test patterns; guidance is concrete, accurate, and includes the right conflict and docs-test paths."
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "name": "antigravity",
+  "version": "0.2.1",
+  "description": "Repository knowledge engine plugin. Bundles CLI-backed slash commands (ag-setup / ag-init / ag-refresh / ag-ask) plus the agent-repo-init skill. Works in both Claude Code and Codex CLI.",
+  "author": {
+    "name": "Antigravity Team",
+    "email": "fanjingwen50@gmail.com"
+  },
+  "homepage": "https://github.com/study8677/antigravity-workspace-template",
+  "license": "MIT",
+  "keywords": ["mcp", "knowledge-graph", "scaffolding", "multi-agent"],
+  "skills": "./skills/",
+  "commands": "./commands/"
+}

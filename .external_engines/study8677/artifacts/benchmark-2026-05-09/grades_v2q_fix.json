@@ -1,0 +1,86 @@
+{
+  "fa-conv": {
+    "accuracy": 2,
+    "citations": 2,
+    "depth": 3,
+    "verify": 2,
+    "note": "Spot-checked pyproject.toml, .pre-commit-config.yaml, scripts/lint.sh, and workflows; much improved, but it omits minor runtime deps and overstates Black/locked-CI details."
+  },
+  "fa-cidocs": {
+    "accuracy": 2,
+    "citations": 1,
+    "depth": 3,
+    "verify": 2,
+    "note": "Spot-checked publish.yml, test.yml, build-docs.yml, deploy-docs.yml, and pre-commit; release/docs flow is mostly right, but it oddly says exact workflow names are unavailable and overgeneralizes locked installs/gates."
+  },
+  "rq-conv": {
+    "accuracy": 3,
+    "citations": 2,
+    "depth": 3,
+    "verify": 3,
+    "note": "Spot-checked pyproject.toml, Makefile, setup.py, CodeQL, zizmor, typecheck, test, and publish workflows; facts are right, though workflow citations are mostly absent."
+  },
+  "sm-conv": {
+    "accuracy": 2,
+    "citations": 2,
+    "depth": 2,
+    "verify": 1,
+    "note": "Spot-checked pyproject.toml, .pre-commit-config.yaml, test.yml, scripts/test.sh, and _compat.py; improved deps/Pydantic-v2 story, but it misses Ruff/ty as named tools and cites nonexistent _compat helpers."
+  },
+  "sm-bridge": {
+    "accuracy": 3,
+    "citations": 2,
+    "depth": 3,
+    "verify": 2,
+    "note": "Spot-checked SQLModelMetaclass, _compat validation, __setattr__, and session wrappers; architecture is right, with minor drift from a nonexistent get_column_kwargs helper."
+  },
+  "fa-deps": {
+    "accuracy": 2,
+    "citations": 2,
+    "depth": 3,
+    "verify": 2,
+    "note": "Spot-checked Starlette re-export shims, __init__.py, routing.py, params.py, and _compat/v2.py; layered synthesis is mostly right but cites nonexistent fastapi/status.py."
+  },
+  "fa-tour": {
+    "accuracy": 3,
+    "citations": 2,
+    "depth": 3,
+    "verify": 3,
+    "note": "Spot-checked pyproject, package modules, docs translations, docs_src, scripts/playwright, workflows, and tests; the architecture tour is accurate, with citations mostly at file/config rather than line level."
+  },
+  "rq-tour": {
+    "accuracy": 3,
+    "citations": 2,
+    "depth": 3,
+    "verify": 3,
+    "note": "Spot-checked src/requests modules, setup.py, pyproject, Makefile, docs, ext, and tests; the public API to Session to adapter layering is correct."
+  },
+  "rq-testing": {
+    "accuracy": 3,
+    "citations": 2,
+    "depth": 3,
+    "verify": 3,
+    "note": "Spot-checked pyproject, Makefile, run-tests.yml, tests/conftest.py, pytest-httpbin usage, trustme fixtures, and testserver; the matrix and local HTTP strategy are correct."
+  },
+  "rq-deps": {
+    "accuracy": 3,
+    "citations": 2,
+    "depth": 3,
+    "verify": 3,
+    "note": "Spot-checked adapters.py, certs.py, utils.py, models.py, compat.py, and pyproject; dependency roles and Requests-vs-urllib3 boundaries are accurate."
+  },
+  "sm-tour": {
+    "accuracy": 2,
+    "citations": 2,
+    "depth": 3,
+    "verify": 2,
+    "note": "Spot-checked package modules, pyproject, tests, sessions, select helpers, and bridge code; the synthesis is mostly right but has minor module-count/line drift and omits data/sqlmodel-slim."
+  },
+  "sm-onboard": {
+    "accuracy": 2,
+    "citations": 2,
+    "depth": 3,
+    "verify": 2,
+    "note": "Spot-checked Field, FieldInfo, get_column_from_field, _compat, related tests, and CI scripts; guidance is mostly right but misses FieldInfoMetadata and gives slightly off formatter guidance."
+  }
+}

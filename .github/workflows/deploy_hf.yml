@@ -1,0 +1,36 @@
+# Auto-deploy to Hugging Face Spaces on push to main
+# Syncs the GitHub repo → HF Space repo automatically
+name: Deploy to HF Spaces
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch: # Manual trigger
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - name: Push to Hugging Face Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_SPACE_REPO: ${{ secrets.HF_SPACE_REPO }}
+        run: |
+          if [ -z "$HF_TOKEN" ] || [ -z "$HF_SPACE_REPO" ]; then
+            echo "⚠️  HF_TOKEN or HF_SPACE_REPO secret not set. Skipping deploy."
+            echo "Set them in GitHub Settings → Secrets → Actions:"
+            echo "  HF_TOKEN: Your Hugging Face access token (read/write)"
+            echo "  HF_SPACE_REPO: e.g., your-username/Your-Repo-Name"
+            exit 0
+          fi
+
+          pip install huggingface_hub
+          echo "Deploying to HF Space: $HF_SPACE_REPO via SDK..."
+          python upload_to_hf.py
+          echo "✅ Deployed successfully."

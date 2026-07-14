@@ -1,0 +1,2 @@
+# Ignore external engines and dependencies from SAST scanning
+.external_engines/

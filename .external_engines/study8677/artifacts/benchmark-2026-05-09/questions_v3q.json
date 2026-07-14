@@ -1,0 +1,53 @@
+{
+  "fastapi": [
+    {
+      "id": "fa-deprec",
+      "q": "Audit FastAPI for deprecation drift. Find every API marked deprecated/legacy/scheduled-for-removal in this codebase (look for DeprecationWarning, warnings.warn, @deprecated, 'deprecated' docstrings or comments, Annotated[..., 'deprecated']). For each, report: where it is defined, what marker labels it deprecated, and whether any other internal FastAPI module or test still actively imports/calls it. Highlight any item that is BOTH marked deprecated AND still referenced internally — that's the drift.",
+      "type": "inconsistency"
+    },
+    {
+      "id": "fa-input-trust",
+      "q": "Map FastAPI's user-input trust boundaries. List every type of caller-controlled HTTP input (path param, query, body, header, cookie, file, form) and identify the single chokepoint where it is parsed and validated before reaching user-defined endpoint functions. Then identify any places where input bypasses validation (e.g., passes Request directly, raw body access, custom request classes). Be specific with file paths.",
+      "type": "security"
+    },
+    {
+      "id": "fa-export-coverage",
+      "q": "Compare the public surface of FastAPI to its test coverage by name. Read the names re-exported from `fastapi/__init__.py` (top-level names, not modules). For each name, identify whether `tests/` has a test file directly named after it (test_<name>.py or test_<name>s.py). List names with NO matching test file as the public-surface-without-test gap.",
+      "type": "inconsistency"
+    }
+  ],
+  "requests": [
+    {
+      "id": "rq-tls-bypass",
+      "q": "Audit every way a caller can disable or weaken TLS verification when using `requests`. Enumerate: (a) the `verify=` parameter and its accepted values, (b) Session-level defaults and inheritance, (c) environment variables (REQUESTS_CA_BUNDLE, CURL_CA_BUNDLE), (d) custom adapters or transport overrides, (e) any HTTP-only behavior. For each, cite the code path and explain what failure mode it produces. Flag any that silently degrade security without warning.",
+      "type": "security"
+    },
+    {
+      "id": "rq-redirect-leak",
+      "q": "When `requests` follows a redirect across hosts/schemes (HTTPS → HTTP, or to a different host), what happens to: the Authorization header, the Cookie header, and the request body for non-idempotent methods? Trace the redirect handling code to identify where each is preserved, stripped, or rewritten. Highlight any case that could leak credentials cross-host.",
+      "type": "security"
+    },
+    {
+      "id": "rq-mutable-default",
+      "q": "Audit `requests` for shared-mutable-state risks. Find any module-level mutable singletons, class-level mutable defaults, mutable default function arguments, or per-Session caches that could cause one user's state to bleed into another's, or that could cause subtle bugs when the user mutates the value they got back. Cite file paths.",
+      "type": "inconsistency"
+    }
+  ],
+  "sqlmodel": [
+    {
+      "id": "sm-typegap",
+      "q": "Inspect `sqlmodel.main.get_sqlalchemy_type()` and the related type-mapping logic. Enumerate every Python type explicitly mapped to a SQLAlchemy type. Then identify common Python types that DEVELOPERS WOULD REASONABLY EXPECT to work but are NOT in the explicit map (e.g., `decimal.Decimal`, `uuid.UUID`, `datetime.time`, `bytes`, JSON-typed `dict`/`list`, enums, `typing.List[T]`, `typing.Optional[T]`, generic types). For each gap, predict what happens at runtime: silent fallback, RuntimeError, NotImplementedError, or wrong type.",
+      "type": "defect-prediction"
+    },
+    {
+      "id": "sm-state-leak",
+      "q": "Identify every place in `sqlmodel` where importing a module, declaring a `class X(SQLModel, table=True)`, or instantiating a model causes a side effect on shared global state — e.g., SQLAlchemy declarative registry, the default metadata, a ContextVar, a mutable class attribute, or a cached lookup. List each trigger with file path; for each, explain the user-visible consequence (e.g., 'two test cases declaring `class User` at module level conflict in the registry').",
+      "type": "inconsistency"
+    },
+    {
+      "id": "sm-sql-injection",
+      "q": "Audit `sqlmodel` for places where user-supplied strings could end up as raw SQL — e.g., as table names, column names, ORDER BY columns, raw text() statements, or anywhere a string is concatenated into SQL. List any APIs that accept caller-provided identifiers and explain whether SQLAlchemy's quoting/binding makes them safe or whether the burden is on the user. Highlight risky surfaces.",
+      "type": "security"
+    }
+  ]
+}

@@ -1,0 +1,68 @@
+{
+  "fastapi": [
+    {
+      "id": "fa-tour",
+      "q": "Give me a high-level tour of the FastAPI codebase as if you're onboarding a new contributor. Cover: top-level directory layout, what each major area is responsible for, and where the core framework code lives (vs docs, tests, scripts, translations). Don't list every file — synthesize the architecture.",
+      "type": "synthesis-architecture"
+    },
+    {
+      "id": "fa-conv",
+      "q": "Describe FastAPI's project conventions — coding style, type-checking, lint rules, formatting tools, and how dependencies are organized (runtime vs dev vs optional extras). Where are these enforced?",
+      "type": "synthesis-conventions"
+    },
+    {
+      "id": "fa-cidocs",
+      "q": "Walk me through how FastAPI publishes a release end-to-end. What CI workflows exist, how are docs (incl. translations) built and deployed, and what security/quality gates run before publishing?",
+      "type": "synthesis-process"
+    },
+    {
+      "id": "fa-deps",
+      "q": "What is the relationship between FastAPI, Starlette, and Pydantic v2 inside this codebase? Which FastAPI features are direct re-exports of Starlette, which extend Starlette, and where does Pydantic v2 plug in?",
+      "type": "synthesis-cross-module"
+    }
+  ],
+  "requests": [
+    {
+      "id": "rq-tour",
+      "q": "Give me a high-level tour of the requests codebase. Cover: top-level layout (src/, ext/, tests/, docs/), the major modules in src/requests/ and what each does, and how the public API surface relates to the internal layering.",
+      "type": "synthesis-architecture"
+    },
+    {
+      "id": "rq-conv",
+      "q": "Describe requests' code-quality and security posture: lint/format/type-checking tools and their configuration, plus what security analyses run in CI and how GitHub Actions are pinned/permissioned.",
+      "type": "synthesis-conventions"
+    },
+    {
+      "id": "rq-testing",
+      "q": "Describe requests' test strategy: what test frameworks/fixtures are used, what's covered by the matrix (Python versions, dependency variations like urllib3<2 or no-character-detection), and how integration with real HTTP is handled.",
+      "type": "synthesis-process"
+    },
+    {
+      "id": "rq-deps",
+      "q": "What runtime dependencies does requests rely on (urllib3, certifi, idna, charset_normalizer) and what role does each play in the request lifecycle? Include the boundaries — what does requests do itself vs delegate to urllib3?",
+      "type": "synthesis-cross-module"
+    }
+  ],
+  "sqlmodel": [
+    {
+      "id": "sm-tour",
+      "q": "Give me a high-level tour of the sqlmodel codebase. Cover: top-level layout, what each module in sqlmodel/ is responsible for, and how the package bridges Pydantic and SQLAlchemy at a structural level.",
+      "type": "synthesis-architecture"
+    },
+    {
+      "id": "sm-conv",
+      "q": "Describe sqlmodel's project conventions — code style, type-checking, lint, testing strategy, supported Python versions, and how compatibility with Pydantic versions is structured.",
+      "type": "synthesis-conventions"
+    },
+    {
+      "id": "sm-bridge",
+      "q": "Explain at the architectural level how SQLModel reconciles Pydantic and SQLAlchemy in a single model class. Don't focus on line numbers — focus on which design responsibilities each component carries and how they coordinate.",
+      "type": "synthesis-architecture"
+    },
+    {
+      "id": "sm-onboard",
+      "q": "If I want to add a new feature to SQLModel — say, a new field-level option that maps to a SQLAlchemy column constraint — what files should I look at, what patterns should I follow, and what tests should I add? Treat this as onboarding guidance.",
+      "type": "synthesis-onboarding"
+    }
+  ]
+}

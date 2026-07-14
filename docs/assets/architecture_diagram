@@ -1,0 +1,37 @@
+digraph "Antigravity Base Agentic Environment" {
+	graph [bgcolor=transparent fontcolor="#2D3436" fontname="Sans-Serif" fontsize=24 label="Antigravity Base Agentic Environment" nodesep=0.60 pad=0.5 rankdir=LR ranksep=0.75 splines=ortho]
+	node [fixedsize=true fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13 height=1.4 imagescale=true labelloc=b shape=box style=rounded width=1.4]
+	edge [color="#7B8894"]
+	"32a9a35c43c04f0e97607c7b0d28f095" [label="Agentic Interface" height=1.9 image="C:\Users\zacca\AppData\Local\Programs\Python\Python311\Lib\site-packages\resources/onprem/client\client.png" shape=none]
+	subgraph "cluster_Control Plane (.agents/)" {
+		graph [bgcolor="#E5F5FD" fontname="Sans-Serif" fontsize=12 label="Control Plane (.agents/)" labeljust=l pencolor="#AEB6BE" rankdir=LR shape=box style=rounded]
+		"000d0ed4b3e64614b2d8b5d78efc49c6" [label="Governance Rules
+(12-Factor, Idempotency)" height=2.3 image="C:\Users\zacca\AppData\Local\Programs\Python\Python311\Lib\site-packages\resources/programming/language\python.png" shape=none]
+		"02825b3f18db44e6acaf3d8e21950005" [label="CI/CD Workflows
+(Publish, Sync)" height=2.3 image="C:\Users\zacca\AppData\Local\Programs\Python\Python311\Lib\site-packages\resources/programming/language\python.png" shape=none]
+		"61a9de104b4f49f9947a08d0bcd32c62" [label="Skills
+(DuckDB Optimizer)" height=2.3 image="C:\Users\zacca\AppData\Local\Programs\Python\Python311\Lib\site-packages\resources/programming/language\python.png" shape=none]
+	}
+	subgraph "cluster_Application (src/)" {
+		graph [bgcolor="#E5F5FD" fontname="Sans-Serif" fontsize=12 label="Application (src/)" labeljust=l pencolor="#AEB6BE" rankdir=LR shape=box style=rounded]
+		"480974cba3da47859ddacd0d19ca490c" [label="FastAPI Gateway" height=1.9 image="C:\Users\zacca\AppData\Local\Programs\Python\Python311\Lib\site-packages\resources/onprem/network\nginx.png" shape=none]
+		f66fe34ae94a4492aa3a328aea339bf3 [label="Context Compactor" height=1.9 image="C:\Users\zacca\AppData\Local\Programs\Python\Python311\Lib\site-packages\resources/programming/language\python.png" shape=none]
+		e2581b4be2c945599b3b56ca985cfeec [label="LLM-as-a-Judge
+(Eval Suite)" height=2.3 image="C:\Users\zacca\AppData\Local\Programs\Python\Python311\Lib\site-packages\resources/programming/language\python.png" shape=none]
+	}
+	subgraph "cluster_Data Plane (.antigravity/ & data/)" {
+		graph [bgcolor="#E5F5FD" fontname="Sans-Serif" fontsize=12 label="Data Plane (.antigravity/ & data/)" labeljust=l pencolor="#AEB6BE" rankdir=LR shape=box style=rounded]
+		"94660311f1d643fe9feebbac59363178" [label="DuckDB Telemetry
+(Idempotent INSERT)" height=2.3 image="C:\Users\zacca\AppData\Local\Programs\Python\Python311\Lib\site-packages\resources/onprem/database\postgresql.png" shape=none]
+		"7778d08c76814da6a105bcdef89b5255" [label="Parquet DLQ
+(Quarantine)" height=2.3 image="C:\Users\zacca\AppData\Local\Programs\Python\Python311\Lib\site-packages\resources/aws/storage\simple-storage-service-s3.png" shape=none]
+	}
+	"32a9a35c43c04f0e97607c7b0d28f095" -> "02825b3f18db44e6acaf3d8e21950005" [label="Executes Workflow" dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	"02825b3f18db44e6acaf3d8e21950005" -> "000d0ed4b3e64614b2d8b5d78efc49c6" [label="Applies Rules" dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	"000d0ed4b3e64614b2d8b5d78efc49c6" -> "480974cba3da47859ddacd0d19ca490c" [label="Governs Router" dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	"32a9a35c43c04f0e97607c7b0d28f095" -> "480974cba3da47859ddacd0d19ca490c" [label="Sends Telemetry" dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	"480974cba3da47859ddacd0d19ca490c" -> f66fe34ae94a4492aa3a328aea339bf3 [label="Validates & Compacts" dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	f66fe34ae94a4492aa3a328aea339bf3 -> e2581b4be2c945599b3b56ca985cfeec [label="Evaluates Quality" dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	e2581b4be2c945599b3b56ca985cfeec -> "94660311f1d643fe9feebbac59363178" [label="Logs Metrics" dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+	"480974cba3da47859ddacd0d19ca490c" -> "7778d08c76814da6a105bcdef89b5255" [label="Routes Invalid" dir=forward fontcolor="#2D3436" fontname="Sans-Serif" fontsize=13]
+}

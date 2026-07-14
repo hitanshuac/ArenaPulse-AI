@@ -1,0 +1,12 @@
+data/
+.secrets/
+.env
+*.parquet
+__pycache__/
+*.pyc
+.pytest_cache/
+*.db
+.antigravity/
+.venv/
+node_modules/
+.agents/product/templates/*.md

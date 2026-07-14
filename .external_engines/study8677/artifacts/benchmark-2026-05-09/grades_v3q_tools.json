@@ -1,0 +1,65 @@
+{
+  "fa-deprec": {
+    "accuracy": 3,
+    "citations": 3,
+    "completeness": 2,
+    "insight": 3,
+    "note": "Much improved with verified line-cited deprecation drift across responses, on_event, operation-id helpers, params, and solve_dependencies, but it still misses the startup/shutdown legacy surfaces."
+  },
+  "fa-input-trust": {
+    "accuracy": 3,
+    "citations": 3,
+    "completeness": 3,
+    "insight": 3,
+    "note": "The tooled answer keeps the prior strong trust-boundary analysis and adds verifiable line citations for the routing/dependency chokepoint and raw-input bypasses."
+  },
+  "fa-export-coverage": {
+    "accuracy": 3,
+    "citations": 3,
+    "completeness": 3,
+    "insight": 3,
+    "note": "Correctly verified all 20 top-level FastAPI re-exports and the only direct filename matches, Path and Query."
+  },
+  "rq-tls-bypass": {
+    "accuracy": 3,
+    "citations": 3,
+    "completeness": 3,
+    "insight": 3,
+    "note": "Now fully verifies per-call, session, environment, adapter, redirect, falsy-value, and HTTP-only TLS weakening paths with line citations."
+  },
+  "rq-redirect-leak": {
+    "accuracy": 3,
+    "citations": 3,
+    "completeness": 3,
+    "insight": 3,
+    "note": "Accurately verifies auth stripping, cookie rebuilding, netrc re-auth, method rewriting, and 307/308 body replay across redirects."
+  },
+  "rq-mutable-default": {
+    "accuracy": 2,
+    "citations": 3,
+    "completeness": 3,
+    "insight": 3,
+    "note": "Greatly improved coverage of mutable module/class/session state, though it overclaims HEADER_VALIDATORS and merge_hooks mutation effects."
+  },
+  "sm-typegap": {
+    "accuracy": 3,
+    "citations": 3,
+    "completeness": 2,
+    "insight": 3,
+    "note": "Correctly verifies SQLModel's explicit type map and major container/union gaps, but is not exhaustive on all plausible failing annotations such as Any and bytearray."
+  },
+  "sm-state-leak": {
+    "accuracy": 3,
+    "citations": 3,
+    "completeness": 3,
+    "insight": 3,
+    "note": "Fully verifies import-time registry/context state, table-class metaclass mutation, registry/metadata conflicts, relationship setup, instantiation effects, and cache opt-ins."
+  },
+  "sm-sql-injection": {
+    "accuracy": 3,
+    "citations": 3,
+    "completeness": 3,
+    "insight": 3,
+    "note": "Accurately verifies SQLModel's raw SQL re-exports, identifier pass-throughs, Field and Relationship escape hatches, execution paths, and SQLAlchemy binding boundaries."
+  }
+}

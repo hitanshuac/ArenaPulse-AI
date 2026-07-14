@@ -1,0 +1,40 @@
+direction: right
+
+User: Human Developer
+Agent: Autonomous AI (Antigravity)
+Rules: Governance Constraints (.agents/rules/)
+Merge: Conflict Resolution Workflow
+Scaffold: App Construction (src/)
+Verify: Eval Suite (pytest)
+
+User -> Agent: "Initialize new project using Base Environment"
+
+Agent -> Rules: 1. Read strict 12-factor constraints
+Agent -> Merge: 2. Execute safe merge protocol
+Merge -> Scaffold: 3. Mechanically build Application Plane
+Scaffold -> Verify: 4. Run deterministic & probabilistic evals
+Verify -> User: 5. Handover fully operational environment
+
+# Styling for Sketch Mode
+classes: {
+  actor: {
+    style: {
+      fill: "#238636"
+      font-color: white
+      border-radius: 10
+    }
+  }
+  system: {
+    style: {
+      fill: "#1f6feb"
+      font-color: white
+    }
+  }
+}
+
+User.class: actor
+Agent.class: actor
+Rules.class: system
+Merge.class: system
+Scaffold.class: system
+Verify.class: system

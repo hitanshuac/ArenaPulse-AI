@@ -1,0 +1,21 @@
+{
+  "name": "antigravity",
+  "owner": {
+    "name": "Antigravity Team",
+    "email": "fanjingwen50@gmail.com",
+    "url": "https://github.com/study8677/antigravity-workspace-template"
+  },
+  "metadata": {
+    "description": "Antigravity developer tools for project knowledge refresh and routed codebase Q&A."
+  },
+  "plugins": [
+    {
+      "name": "antigravity",
+      "source": "./",
+      "description": "Repository knowledge engine: CLI-backed slash commands (ag-setup / ag-init / ag-refresh / ag-ask) for both Claude Code and Codex CLI, agent-repo-init skill, and optional MCP server.",
+      "version": "0.2.1",
+      "category": "developer-tools",
+      "keywords": ["mcp", "knowledge-graph", "multi-agent", "scaffolding"]
+    }
+  ]
+}

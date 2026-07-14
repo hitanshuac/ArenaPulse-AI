@@ -1,0 +1,107 @@
+{
+  "fa-f1": {
+    "accuracy": 0,
+    "citations": 2,
+    "depth": 0,
+    "verify": 0,
+    "note": "Verified `fastapi/__init__.py:14` is a correct re-export, but the actual `Depends` dataclass is in `fastapi/params.py:745-749` and the answer refuses the requested definition."
+  },
+  "fa-f2": {
+    "accuracy": 3,
+    "citations": 1,
+    "depth": 2,
+    "verify": 3,
+    "note": "Verified `FastAPI` is defined in `fastapi/applications.py` and `FastAPI.openapi()` at line 1068 performs the OpenAPI generation call."
+  },
+  "fa-d1": {
+    "accuracy": 1,
+    "citations": 3,
+    "depth": 0,
+    "verify": 1,
+    "note": "Verified the cited public re-export lines are correct, but runtime resolution is actually in `fastapi/dependencies/utils.py` and `fastapi/routing.py`, so the answer misses the requested behavior."
+  },
+  "fa-d2": {
+    "accuracy": 2,
+    "citations": 1,
+    "depth": 2,
+    "verify": 2,
+    "note": "Verified the await-versus-threadpool execution in `run_endpoint_function()`, though current `get_request_handler()` uses `dependant.is_coroutine_callable` rather than the exact `asyncio.iscoroutinefunction(dependant.call)` snippet."
+  },
+  "fa-x1": {
+    "accuracy": 1,
+    "citations": 2,
+    "depth": 1,
+    "verify": 1,
+    "note": "Verified the public `BackgroundTasks` export and `add_task()` API, but the answer stops before the actual attachment in `routing.py` and execution by Starlette response background handling."
+  },
+  "rq-f1": {
+    "accuracy": 3,
+    "citations": 1,
+    "depth": 2,
+    "verify": 3,
+    "note": "Verified `Session` is `src/requests/sessions.py:395` and `Session.__init__()` mounts default `HTTPAdapter()` instances for `https://` and `http://` at lines 502-503."
+  },
+  "rq-f2": {
+    "accuracy": 3,
+    "citations": 3,
+    "depth": 3,
+    "verify": 3,
+    "note": "Verified `SessionRedirectMixin.resolve_redirects()` at `src/requests/sessions.py:186`, the redirect-limit check at line 216, and `DEFAULT_REDIRECT_LIMIT = 30` at `src/requests/models.py:104`."
+  },
+  "rq-d1": {
+    "accuracy": 0,
+    "citations": 0,
+    "depth": 0,
+    "verify": 0,
+    "note": "Verified the source has the relevant adapter and pool logic in `src/requests/adapters.py` and `sessions.py`, but the timed-out answer only gives generic project snippets."
+  },
+  "rq-d2": {
+    "accuracy": 0,
+    "citations": 0,
+    "depth": 0,
+    "verify": 0,
+    "note": "Verified TLS verification is implemented through `Session.merge_environment_settings()`, `HTTPAdapter.cert_verify()`, and certifi-backed defaults, none of which the timed-out answer explains."
+  },
+  "rq-x1": {
+    "accuracy": 1,
+    "citations": 1,
+    "depth": 1,
+    "verify": 0,
+    "note": "Verified the named starting modules are relevant, but the answer falsely refuses a trace that is present through `api.py`, `sessions.py`, `HTTPAdapter.send()`, and `urllib3` I/O."
+  },
+  "sm-f1": {
+    "accuracy": 1,
+    "citations": 1,
+    "depth": 0,
+    "verify": 1,
+    "note": "Verified `sqlmodel/main.py` is the right file, but the answer omits the actual `SQLModel` definition and metaclass inheritance that combines Pydantic and SQLAlchemy behavior."
+  },
+  "sm-f2": {
+    "accuracy": 2,
+    "citations": 0,
+    "depth": 1,
+    "verify": 2,
+    "note": "Verified `sqlmodel.create_engine` is directly re-exported from `sqlalchemy.engine.create_engine` in `sqlmodel/__init__.py:4`, with minor drift because the answer calls it a wrapper and gives no source citation."
+  },
+  "sm-d1": {
+    "accuracy": 1,
+    "citations": 1,
+    "depth": 0,
+    "verify": 1,
+    "note": "Verified `sqlmodel/main.py` and `_compat.py` are relevant, but the answer does not describe the `FieldInfo`, metaclass, column construction, or validation paths that answer the question."
+  },
+  "sm-d2": {
+    "accuracy": 3,
+    "citations": 3,
+    "depth": 3,
+    "verify": 3,
+    "note": "Verified the cited `FieldInfo`, `Field()`, `SQLModelMetaclass`, type inference, `get_column_from_field()`, and `__init__.py` export line ranges against the current source."
+  },
+  "sm-x1": {
+    "accuracy": 1,
+    "citations": 1,
+    "depth": 0,
+    "verify": 0,
+    "note": "Verified `sqlmodel/main.py` is relevant, but the answer refuses the available trace through `SQLModelMetaclass.__new__()`, `__init__()`, and `DeclarativeMeta.__init__()` mapper registration."
+  }
+}

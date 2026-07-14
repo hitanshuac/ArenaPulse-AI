@@ -1,0 +1,107 @@
+{
+  "fa-f1": {
+    "accuracy": 3,
+    "citations": 3,
+    "depth": 3,
+    "verify": 3,
+    "note": "Correctly identifies the Depends dataclass, generated initializer arguments, and the public factory wrapper with matching line citations."
+  },
+  "fa-f2": {
+    "accuracy": 3,
+    "citations": 3,
+    "depth": 3,
+    "verify": 3,
+    "note": "Correctly locates FastAPI.openapi in fastapi/applications.py and verifies the cache/get_openapi/openapi.json route path."
+  },
+  "fa-d1": {
+    "accuracy": 3,
+    "citations": 3,
+    "depth": 3,
+    "verify": 3,
+    "note": "Accurately traces classification and per-request dependency, query, and body resolution with detailed matching source lines."
+  },
+  "fa-d2": {
+    "accuracy": 3,
+    "citations": 3,
+    "depth": 3,
+    "verify": 3,
+    "note": "Correctly explains endpoint and dependency coroutine detection and the await versus threadpool branch."
+  },
+  "fa-x1": {
+    "accuracy": 3,
+    "citations": 2,
+    "depth": 3,
+    "verify": 3,
+    "note": "The FastAPI background-task plumbing is correct and well traced, but the answer includes noisy tool errors and lacks line-cited Starlette execution sources."
+  },
+  "rq-f1": {
+    "accuracy": 3,
+    "citations": 3,
+    "depth": 3,
+    "verify": 3,
+    "note": "Correctly locates Session and the default HTTPAdapter mounts for both https and http."
+  },
+  "rq-f2": {
+    "accuracy": 3,
+    "citations": 3,
+    "depth": 3,
+    "verify": 3,
+    "note": "Correctly identifies Session.resolve_redirects and the default redirect limit definition, assignment, and enforcement."
+  },
+  "rq-d1": {
+    "accuracy": 3,
+    "citations": 3,
+    "depth": 3,
+    "verify": 3,
+    "note": "Correctly explains session adapter selection, HTTPAdapter pool managers, proxy handling, and urllib3 pool-key delegation."
+  },
+  "rq-d2": {
+    "accuracy": 3,
+    "citations": 3,
+    "depth": 3,
+    "verify": 3,
+    "note": "Accurately covers verify defaults, environment CA overrides, certifi integration, adapter cert_verify behavior, and urllib3 pool context."
+  },
+  "rq-x1": {
+    "accuracy": 3,
+    "citations": 3,
+    "depth": 3,
+    "verify": 3,
+    "note": "Correctly traces requests.get from the module helper through Session, PreparedRequest, adapter send, urllib3 urlopen, response wrapping, body read, and cleanup."
+  },
+  "sm-f1": {
+    "accuracy": 3,
+    "citations": 3,
+    "depth": 3,
+    "verify": 3,
+    "note": "Correctly identifies SQLModel's BaseModel inheritance and the metaclass combining Pydantic and SQLAlchemy declarative behavior."
+  },
+  "sm-f2": {
+    "accuracy": 3,
+    "citations": 3,
+    "depth": 3,
+    "verify": 3,
+    "note": "Correctly states that SQLModel re-exports sqlalchemy.engine.create_engine directly."
+  },
+  "sm-d1": {
+    "accuracy": 3,
+    "citations": 3,
+    "depth": 3,
+    "verify": 3,
+    "note": "Correctly traces FieldInfo metadata, Field construction, table=True column conversion, type mapping, and assignment behavior."
+  },
+  "sm-d2": {
+    "accuracy": 3,
+    "citations": 3,
+    "depth": 3,
+    "verify": 3,
+    "note": "The shorter answer is still correct: Field bridges Pydantic metadata and SQLAlchemy column configuration, including the sa_column escape hatch."
+  },
+  "sm-x1": {
+    "accuracy": 3,
+    "citations": 3,
+    "depth": 3,
+    "verify": 3,
+    "note": "Correctly traces table=True through SQLModelMetaclass.__new__, Column assignment, table detection, and DeclarativeMeta.__init__ mapper registration."
+  }
+}

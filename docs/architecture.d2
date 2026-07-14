@@ -1,0 +1,57 @@
+direction: right
+classes: {
+  dark: {
+    style: {
+      fill: "#0D1117"
+      stroke: "#0D1117"
+      font-color: "#FFFFFF"
+      font-size: 24
+    }
+  }
+  cluster: {
+    style: {
+      fill: "#161B22"
+      stroke: "#30363D"
+      font-color: "#FFFFFF"
+    }
+  }
+}
+
+user: "Agentic Interface" {
+  shape: person
+}
+
+"Control Plane (.agents/)": {
+  class: cluster
+  rules: "Governance Rules\n(12-Factor, Idempotency)"
+  workflows: "CI/CD Workflows\n(master-sync, publish-showcase)"
+  skills: "Skills\n(DuckDB Optimizer, Diagram Generator)"
+}
+
+"Application (src/)": {
+  class: cluster
+  router: "FastAPI Gateway"
+  compactor: "Context Compactor"
+  judge: "LLM-as-a-Judge\n(Eval Suite)"
+}
+
+"Data Plane (data/)": {
+  class: cluster
+  duckdb: "DuckDB Telemetry\n(Idempotent INSERT)" {
+    shape: cylinder
+  }
+  dlq: "Parquet DLQ\n(Quarantine)" {
+    shape: cylinder
+  }
+}
+
+user -> "Control Plane (.agents/)".workflows: "Executes Workflow"
+"Control Plane (.agents/)".workflows -> "Control Plane (.agents/)".rules: "Applies Rules"
+"Control Plane (.agents/)".rules -> "Application (src/)".router: "Governs Router"
+
+user -> "Application (src/)".router: "Sends Telemetry"
+"Application (src/)".router -> "Application (src/)".compactor: "Validates & Compacts"
+"Application (src/)".compactor -> "Application (src/)".judge: "Evaluates Quality"
+
+"Application (src/)".judge -> "Data Plane (data/)".duckdb: "Logs Metrics"
+"Application (src/)".router -> "Data Plane (data/)".dlq: "Routes Invalid"
