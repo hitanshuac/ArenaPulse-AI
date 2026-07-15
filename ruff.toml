@@ -19,7 +19,7 @@ select = [
     "UP",  # pyupgrade
     "RUF" # ruff-specific
 ]
-ignore = []
+ignore = ["E501", "B008", "B904", "RUF006"]
 
 [format]
 quote-style = "double"

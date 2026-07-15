@@ -1,0 +1,4 @@
+zone_id,current_occupancy,max_capacity,associated_gates
+Zone A (North Gate),3200,8000,Gates 1-2
+Zone B (East Gate),5100,8000,Gates 3-4
+Zone C (South Gate),1500,8000,Gates 5-6
