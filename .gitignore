@@ -8,5 +8,6 @@ __pycache__/
 *.db
 .antigravity/
 .venv/
+venv/
 node_modules/
 .agents/product/templates/*.md
