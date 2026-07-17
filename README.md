@@ -16,7 +16,7 @@
 ![Handover Flow (Technical)](docs/assets/handover_flow_technical.jpg)
 
 ## 📖 Overview
-This repository serves as a powerful, extensible **Base Agentic Environment** built on the Antigravity framework. It utilizes a strict **Split-Plane Architecture** that separates the human-defined control plane (`.agents/`) from the system-managed data and state plane (`data/`). This ensures deterministic AI execution, zero-hallucination context management, and enterprise-grade reliability.
+This repository serves as a powerful, extensible **Agentic Triage Cockpit** built on a strict **Split-Plane Architecture**. It separates the deterministic, high-speed physical state management (via a Directed Acyclic Graph topology modeling fluid dynamics) from the AI-driven inference engine. This ensures zero-hallucination context management, real-world physical correctness (e.g. enforcing upstream mitigations), and enterprise-grade reliability.
 
 ## 🚀 Dynamic Skill Integration
 This workspace is designed to be highly composable. **As new skills and agents are developed in separate, isolated projects, they are continuously imported into this base environment.** This aggregation allows the environment to grow exponentially more powerful over time, consolidating isolated intelligence into a single, unified operating system.
@@ -111,10 +111,10 @@ pip install -r requirements.txt
 ```text
 .
 ├── .agents/            # The Control Plane: Rules, Skills, and Workflows (Human Edited)
-├── .config/            # Environment configurations and MCP integrations
-├── src/                # Application source code and Python starter kit (FastAPI, Routers, Capabilities)
+├── src/                # Application source code (FastAPI, Spatial State Manager, Flowchart Logic)
+├── static/             # Frontend Dashboard UI (Live Subway Map Flowchart, CSS)
 ├── data/               # The Data Plane: DuckDB metrics, Quarantine DLQs, and Parquet files (System Managed)
-└── hf-webui/           # Hugging Face Spaces frontend deployment configurations
+└── tests/              # Test Automation Suite (Pytest, Fixtures)
 ```
 
 
