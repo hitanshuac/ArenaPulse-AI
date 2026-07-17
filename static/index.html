@@ -59,6 +59,38 @@
                 </div>
             </div>
 
+            <!-- Data Ingestion & Quota Telemetry Panel -->
+            <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="text-sm font-semibold tracking-tight text-blue-400">System Telemetry & Ingestion</h2>
+                    <span class="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded shadow-inner">df.info() Live</span>
+                </div>
+                <div class="grid grid-cols-2 gap-2 text-xs mb-3">
+                    <div class="bg-slate-900 p-2 rounded border border-slate-800">
+                        <div class="text-slate-500 font-semibold mb-1">API Quota (15 RPD)</div>
+                        <div class="font-mono" id="quotaDisplay">--/15 calls</div>
+                    </div>
+                    <div class="bg-slate-900 p-2 rounded border border-slate-800">
+                        <div class="text-slate-500 font-semibold mb-1">LLM Cache Hit Pool</div>
+                        <div class="font-mono text-emerald-400" id="cacheDisplay">-- items</div>
+                    </div>
+                </div>
+                <div class="overflow-x-auto border border-slate-800 rounded bg-slate-900">
+                    <table class="w-full text-left text-[10px] text-slate-400">
+                        <thead class="bg-slate-950 border-b border-slate-800 uppercase">
+                            <tr>
+                                <th class="px-2 py-1.5 font-semibold">Zone_ID</th>
+                                <th class="px-2 py-1.5 font-semibold">DType</th>
+                                <th class="px-2 py-1.5 font-semibold">Last_Updated (ISO)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ingestionTableBody" class="font-mono">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             <!-- Stadium Zone Card List -->
             <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
                 <h2 class="text-sm font-semibold mb-3 tracking-tight">Ingested Zone Occupancies</h2>
@@ -146,13 +178,42 @@
         function initSSE() {
             const evtSource = new EventSource('/api/stadium/stream');
             evtSource.onmessage = function(event) {
-                const zones = JSON.parse(event.data);
-                renderZones(zones);
-                updateChartWithLatestOccupancy(zones);
+                const payload = JSON.parse(event.data);
+                renderZones(payload.zones);
+                updateChartWithLatestOccupancy(payload.zones);
+                renderSystemTelemetry(payload);
             };
             evtSource.onerror = function(err) {
                 console.error("Telemetry connection lost:", err);
             };
+        }
+
+        function renderSystemTelemetry(payload) {
+            // Update Quota and Cache
+            document.getElementById('quotaDisplay').innerText = `${payload.system.quota_used}/${payload.system.quota_limit} calls`;
+            
+            const ratio = payload.system.quota_used / payload.system.quota_limit;
+            if (ratio >= 0.8) {
+                document.getElementById('quotaDisplay').className = "font-mono text-rose-400 font-bold";
+            } else {
+                document.getElementById('quotaDisplay').className = "font-mono text-slate-300";
+            }
+            
+            document.getElementById('cacheDisplay').innerText = `${payload.system.cache_size} items`;
+
+            // Update df.info style table
+            const tbody = document.getElementById('ingestionTableBody');
+            tbody.innerHTML = '';
+            payload.zones.forEach(z => {
+                const updated = z.last_updated ? z.last_updated.substring(11, 23) : "pending...";
+                tbody.innerHTML += `
+                    <tr class="border-b border-slate-800 last:border-0 hover:bg-slate-800/50">
+                        <td class="px-2 py-1 text-slate-300 truncate max-w-[100px]" title="${z.zone_id}">${z.zone_id}</td>
+                        <td class="px-2 py-1 text-blue-400">int64</td>
+                        <td class="px-2 py-1 text-emerald-500">${updated}</td>
+                    </tr>
+                `;
+            });
         }
 
         function renderZones(zones) {

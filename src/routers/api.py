@@ -20,11 +20,19 @@ async def get_stadium_state():
 
 @api_router.get("/stadium/stream")
 async def stadium_stream():
-    """Server-Sent Events endpoint pushing real-time stadium telemetry."""
+    """Server-Sent Events endpoint pushing real-time stadium telemetry and system metrics."""
     async def event_generator():
         while True:
             state = await state_manager.get_all_zones()
-            yield f"data: {json.dumps(state)}\n\n"
+            payload = {
+                "zones": state,
+                "system": {
+                    "quota_used": stadium_agent.llm_client.daily_calls_made,
+                    "quota_limit": stadium_agent.llm_client.DAILY_LIMIT,
+                    "cache_size": len(stadium_agent.llm_client.response_cache)
+                }
+            }
+            yield f"data: {json.dumps(payload)}\n\n"
             await asyncio.sleep(2)
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 

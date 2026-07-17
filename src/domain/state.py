@@ -1,4 +1,5 @@
 import asyncio
+from datetime import datetime
 from typing import List, Dict, Any, Optional
 from pydantic import BaseModel, Field
 
@@ -8,6 +9,7 @@ class ZoneModel(BaseModel):
     max_capacity: int = Field(..., gt=0, description="Max safe capacity threshold")
     associated_gates: str = Field(..., description="Physical gates serving the zone")
     velocity: int = Field(0, description="Rate of change (fans/min)")
+    last_updated: str = Field(default_factory=lambda: datetime.utcnow().isoformat() + "Z", description="ISO timestamp of last telemetry ingestion")
 
 class StadiumStateManager:
     """
@@ -38,6 +40,7 @@ class StadiumStateManager:
         async with self._lock:
             if zone_id in self._zones:
                 self._zones[zone_id].current_occupancy = max(0, new_occupancy)
+                self._zones[zone_id].last_updated = datetime.utcnow().isoformat() + "Z"
                 return True
             return False
 
@@ -57,3 +60,4 @@ class StadiumStateManager:
                 actual_addition = new_occ - zone.current_occupancy
                 zone.current_occupancy = new_occ
                 zone.velocity = actual_addition * 15
+                zone.last_updated = datetime.utcnow().isoformat() + "Z"

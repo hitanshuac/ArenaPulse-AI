@@ -1,26 +1,24 @@
-# LLM Council: Peer Reviews
-
 **Reviewer 1:**
-1. **Strongest Response:** B. It accurately diagnoses that the framework is solving non-determinism, rather than just calling the technology "bad" or "immature" like A or D.
-2. **Biggest Blind Spot:** C. Assuming these guardrails make GenAI infinitely composable ignores the exponential complexity and compound error rates of chaining probabilistic models together.
-3. **Missed by All:** The cost and latency overhead. Implementing DLQs, strict schemas, and Human-in-the-Loop interrupts dramatically increases the time and compute required for every operation.
+1. Response D (Outsider) is the strongest. It perfectly diagnoses the user's anxiety: the refactor was purely structural (backend), making it invisible to the end user. Building the dashboard bridges that gap.
+2. Response A (Contrarian) has the biggest blind spot. Calling the refactor "over-engineering" ignores the very real 15 RPD quota constraint that would crash the app during evaluation.
+3. All responses missed the exact data structure needed. A `df.info()` equivalent needs data types, memory usage, and non-null counts, not just a table of occupancies.
 
 **Reviewer 2:**
-1. **Strongest Response:** E. It provides the most pragmatic, actionable view—defining exact input/output schemas is exactly how you handle non-determinism in practice.
-2. **Biggest Blind Spot:** A. Calling GenAI "untrustworthy" and a "liability" ignores that when framed properly, it performs remarkably well on reasoning tasks. It's not a liability; it's a misunderstood primitive.
-3. **Missed by All:** The evolution of the models themselves. This framework assumes LLMs will always be unpredictable and require heavy guardrails, but as models get smarter, this heavy scaffolding might become technical debt.
+1. Response E (Executor) is strongest because it provides the exact technical path of least resistance: hijack the existing SSE stream (`/api/stadium/stream`) to render the data without touching the backend again.
+2. Response C (Expansionist) has a blind spot regarding time. We are finalizing for a hackathon; suggesting a massive new enterprise dashboard might cause us to run out of time.
+3. All responses failed to address how we prove the *cache* and *quota limits* are working on this new dashboard. Timestamps aren't enough; we need to visualize the memoization hits.
 
 **Reviewer 3:**
-1. **Strongest Response:** B. Acknowledging GenAI as a new computational primitive that needs a new OS is exactly the right macro framing.
-2. **Biggest Blind Spot:** D. Calling the technology "half-baked" misses the fact that the *integration patterns* are what's immature, not the underlying reasoning engine. 
-3. **Missed by All:** The actual value of the data plane. The framework protects the data, but GenAI's real power is generating *new* structured data assets at scale, which none of the responses addressed.
+1. Response B (First Principles) is the strongest. It aligns the user's desire for a dashboard directly with the underlying value of the refactor (quota saving) and suggests visualizing the invisible improvements.
+2. Response D (Outsider) assumes we just need to build a dashboard, but misses that the dashboard needs to specifically prove the *backend's* new capabilities, not just show basic data.
+3. All responses missed the UI/UX impact. Where does this dashboard go? If we just slap a table on the existing UI, it might clutter the volunteer control deck.
 
 **Reviewer 4:**
-1. **Strongest Response:** A. It sees through the hype and points out that if this tech was as good as advertised, we wouldn't need all this "militarized" protection.
-2. **Biggest Blind Spot:** C. C completely drinks the kool-aid, claiming GenAI can replace entire teams autonomously when the rest of the framework is explicitly designed to stop it from running autonomously.
-3. **Missed by All:** The human toll. A framework requiring strict Human-in-the-Loop interrupts means humans are now just error-checkers for machines, which is a terrible workflow for engineers.
+1. Response E (Executor) wins. It grounds the abstract ideas into a concrete, 20-line HTML/JS implementation using the existing infrastructure.
+2. Response A (Contrarian) is missing the psychological aspect of a hackathon. Judges *love* visible data ingestion metrics. Telling the user not to build it is bad advice.
+3. All responses missed that `df.info` shows structural metadata (dtypes, nulls, memory). A stadium occupancy table isn't `df.info`. We need to show the API quota status and State Manager lock status to truly reflect the backend refactor.
 
 **Reviewer 5:**
-1. **Strongest Response:** B. It provides the theoretical justification for why practical constraints (schemas, DuckDB) are necessary.
-2. **Biggest Blind Spot:** D. Focuses on the optics of "babysitting" rather than recognizing that *all* enterprise software requires guardrails. Databases have constraints; why shouldn't AI?
-3. **Missed by All:** The maintenance burden. Defining Pydantic schemas, writing DLQ handlers, and maintaining LangGraph states for every single LLM call is a massive engineering overhead that doesn't exist in traditional apps.
+1. Response D (Outsider) is strongest for identifying the root cause of the user's question: invisible backend work feels like a hallucination until you surface the data.
+2. Response B (First Principles) has a blind spot by suggesting we just modify the existing UI. A separate, distinct "Data Telemetry" panel is closer to what the user asked for (`df.info` style).
+3. All responses missed that the backend `ZoneModel` currently doesn't include a `last_updated` timestamp. If we want to show ingestion timestamps, we have to slightly modify the Pydantic model to include a `timestamp` field.

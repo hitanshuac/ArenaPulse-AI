@@ -171,5 +171,6 @@ To ensure robust operation within strict daily limits (15 RPD for Gemini 2.5 Fla
 ### 💰 Extreme Quota Conservation Architecture (15 RPD Optimization)
 Operating on Gemini 2.5 Flash's strict 15 Requests-Per-Day limit required shifting from a naive polling chatbot to an enterprise-grade caching engine.
 
-* **State Caching (Memoization):** The backend hashes the telemetry arrays. If the layout hasn't critically changed, it serves cached JSON decisions—costing 0 API tokens and ensuring judges can click test buttons repeatedly without crashing the app limit.
-* **Human-In-The-Loop Escalation:** The real-time SSE chart runs on a 100% free deterministic Edge engine. The LLM is locked behind an explicit UI toggle (Use Live LLM), ensuring the AI is only fired when high-level reasoning is absolutely required.
+* **State Caching (Memoization):** The backend hashes the telemetry arrays via the `SecureLLMClient` interceptor. If the layout hasn't critically changed, it serves cached JSON decisions—costing 0 API tokens and ensuring judges can click test buttons repeatedly without crashing the app limit.
+* **Human-In-The-Loop Escalation:** The real-time SSE chart runs on a 100% free deterministic Edge engine via a thread-safe `StadiumStateManager`. The LLM is locked behind an explicit UI toggle (Use Live LLM), ensuring the AI is only fired when high-level reasoning is absolutely required.
+* **Visual Telemetry Dashboard:** A live `df.info()` style table displays real-time data ingestion ISO timestamps and tracks API Quota constraints directly in the UI, proving backend cache hits to the user.
