@@ -66,13 +66,27 @@
                     <span class="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded shadow-inner">df.info() Live</span>
                 </div>
                 <div class="grid grid-cols-2 gap-2 text-xs mb-3">
-                    <div class="bg-slate-900 p-2 rounded border border-slate-800">
-                        <div class="text-slate-500 font-semibold mb-1">API Quota (15 RPD)</div>
+                    <div class="bg-slate-900 p-2 rounded border border-slate-800 relative group" tabindex="0" aria-label="API Quota allows only 15 LLM requests per day. This metric tracks your current usage to prevent quota exhaustion.">
+                        <div class="flex items-center gap-1.5 mb-1">
+                            <div class="text-slate-500 font-semibold">API Quota (15 RPD)</div>
+                            <span class="text-[9px] cursor-help rounded-full border border-slate-600 w-3.5 h-3.5 flex items-center justify-center text-slate-500 bg-slate-950" aria-hidden="true">?</span>
+                        </div>
                         <div class="font-mono" id="quotaDisplay">--/15 calls</div>
+                        <!-- Tooltip popup -->
+                        <div class="absolute bottom-full left-0 mb-2 hidden group-hover:block group-focus:block w-48 p-2 bg-slate-800 text-slate-200 text-[10px] rounded shadow-xl z-10 border border-slate-700 leading-tight">
+                            <strong>15 Requests Per Day:</strong> Tracks daily usage of the Gemini API to prevent exhaustion. The system aggressively caches data to conserve these limits.
+                        </div>
                     </div>
-                    <div class="bg-slate-900 p-2 rounded border border-slate-800">
-                        <div class="text-slate-500 font-semibold mb-1">LLM Cache Hit Pool</div>
+                    <div class="bg-slate-900 p-2 rounded border border-slate-800 relative group" tabindex="0" aria-label="LLM Cache Hit Pool displays the number of AI decisions saved in memory. When the same stadium state occurs, the system reuses these decisions instead of calling the API, costing zero quota.">
+                        <div class="flex items-center gap-1.5 mb-1">
+                            <div class="text-slate-500 font-semibold">LLM Cache Pool</div>
+                            <span class="text-[9px] cursor-help rounded-full border border-slate-600 w-3.5 h-3.5 flex items-center justify-center text-slate-500 bg-slate-950" aria-hidden="true">?</span>
+                        </div>
                         <div class="font-mono text-emerald-400" id="cacheDisplay">-- items</div>
+                        <!-- Tooltip popup -->
+                        <div class="absolute bottom-full right-0 mb-2 hidden group-hover:block group-focus:block w-48 p-2 bg-slate-800 text-slate-200 text-[10px] rounded shadow-xl z-10 border border-slate-700 leading-tight">
+                            <strong>Memoization Pool:</strong> Number of AI decisions securely saved in memory. Reusing known states costs 0 API tokens and executes instantly.
+                        </div>
                     </div>
                 </div>
                 <div class="overflow-x-auto border border-slate-800 rounded bg-slate-900">
