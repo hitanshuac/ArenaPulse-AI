@@ -31,9 +31,16 @@
         <!-- Left Column: Live Time-Series Chart & Ingestion -->
         <section class="lg:col-span-5 flex flex-col gap-4" aria-labelledby="live-telemetry-panel">
             <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 id="live-telemetry-panel" class="text-md font-semibold text-slate-200">Live Telemetry Trends (Time-Series)</h2>
+                <div class="flex justify-between items-center mb-4 relative group" tabindex="0" aria-label="This chart visualizes the real-time sum of the velocity (fans per minute) across all active stadium zones. It tracks data over a rolling 5-minute historical window.">
+                    <div class="flex items-center gap-2">
+                        <h2 id="live-telemetry-panel" class="text-md font-semibold text-slate-200">Live Telemetry Trends (Time-Series)</h2>
+                        <span class="text-[10px] cursor-help rounded-full border border-slate-600 w-4 h-4 flex items-center justify-center text-slate-400 bg-slate-900 hover:bg-slate-700" aria-hidden="true">?</span>
+                    </div>
                     <span class="text-[10px] bg-blue-900/40 text-blue-400 border border-blue-800 px-2 py-0.5 rounded-full">Chart.js Live Feed</span>
+                    <!-- Tooltip popup -->
+                    <div class="absolute top-full left-0 mt-2 hidden group-hover:block group-focus:block w-64 p-3 bg-slate-800 text-slate-200 text-xs rounded shadow-xl z-20 border border-slate-700 leading-relaxed">
+                        <strong>Velocity Aggregate:</strong> This chart visualizes the real-time sum of the inflow rate (fans per minute) across all active stadium zones, displaying a rolling 5-minute historical window.
+                    </div>
                 </div>
                 
                 <!-- Chart Area -->
@@ -63,7 +70,6 @@
             <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
                 <div class="flex justify-between items-center mb-3">
                     <h2 class="text-sm font-semibold tracking-tight text-blue-400">System Telemetry & Ingestion</h2>
-                    <span class="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded shadow-inner">df.info() Live</span>
                 </div>
                 <div class="grid grid-cols-2 gap-2 text-xs mb-3">
                     <div class="bg-slate-900 p-2 rounded border border-slate-800 relative group" tabindex="0" aria-label="API Quota allows only 15 LLM requests per day. This metric tracks your current usage to prevent quota exhaustion.">
@@ -107,7 +113,14 @@
 
             <!-- Stadium Zone Card List -->
             <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                <h2 class="text-sm font-semibold mb-3 tracking-tight">Ingested Zone Occupancies</h2>
+                <div class="flex items-center gap-2 mb-3 relative group" tabindex="0" aria-label="Live breakdown of individual stadium zones. Displays current occupancy versus maximum safe capacity, and tracks the inflow velocity of fans per minute.">
+                    <h2 class="text-sm font-semibold tracking-tight">Ingested Zone Occupancies</h2>
+                    <span class="text-[10px] cursor-help rounded-full border border-slate-600 w-4 h-4 flex items-center justify-center text-slate-400 bg-slate-900 hover:bg-slate-700" aria-hidden="true">?</span>
+                    <!-- Tooltip popup -->
+                    <div class="absolute top-full left-0 mt-2 hidden group-hover:block group-focus:block w-64 p-3 bg-slate-800 text-slate-200 text-xs rounded shadow-xl z-20 border border-slate-700 leading-relaxed">
+                        <strong>Zone Breakdown:</strong> Live visualization of individual zones. Displays current occupancy versus maximum safe capacity, and tracks inflow velocity.
+                    </div>
+                </div>
                 <div class="space-y-2" id="zoneContainer" aria-live="polite">
                     <!-- Loaded dynamically -->
                 </div>
@@ -120,9 +133,16 @@
             <!-- Agent Workflow Dashboard -->
             <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex flex-col gap-3">
                 <div class="flex justify-between items-center">
-                    <div>
-                        <h2 id="operations-intelligence" class="text-md font-semibold text-blue-400">Agentic Workflow Engine</h2>
+                    <div class="relative group" tabindex="0" aria-label="The autonomous reasoning engine. When triggered, it analyzes the live telemetry and drafts mitigation strategies using the LLM.">
+                        <div class="flex items-center gap-2">
+                            <h2 id="operations-intelligence" class="text-md font-semibold text-blue-400">Agentic Workflow Engine</h2>
+                            <span class="text-[10px] cursor-help rounded-full border border-slate-600 w-4 h-4 flex items-center justify-center text-slate-400 bg-slate-900 hover:bg-slate-700" aria-hidden="true">?</span>
+                        </div>
                         <p class="text-xs text-slate-500">Autonomous processing triggers tools based on live parameters</p>
+                        <!-- Tooltip popup -->
+                        <div class="absolute top-full left-0 mt-2 hidden group-hover:block group-focus:block w-64 p-3 bg-slate-800 text-slate-200 text-xs rounded shadow-xl z-20 border border-slate-700 leading-relaxed">
+                            <strong>Reasoning Engine:</strong> Analyzes telemetry and utilizes the language model to automatically draft optimal mitigation and routing strategies.
+                        </div>
                     </div>
                     <div class="flex items-center gap-3">
                         <label class="flex items-center gap-2 text-xs text-amber-400 font-semibold cursor-pointer" title="Only 15 requests allowed per day!">
