@@ -1,1 +1,0 @@
-"""graph-retrieval skill package."""
