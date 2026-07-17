@@ -1,7 +1,9 @@
 import asyncio
 from datetime import datetime
-from typing import List, Dict, Any, Optional
+from typing import Any
+
 from pydantic import BaseModel, Field
+
 
 class ZoneModel(BaseModel):
     zone_id: str = Field(..., description="Unique ID of the stadium zone")
@@ -26,13 +28,13 @@ class StadiumStateManager:
 
     def _init_state(self):
         self._lock = asyncio.Lock()
-        self._zones: Dict[str, ZoneModel] = {
+        self._zones: dict[str, ZoneModel] = {
             "Zone A (North Gate)": ZoneModel(zone_id="Zone A (North Gate)", current_occupancy=3200, max_capacity=8000, associated_gates="Gates 1-2", velocity=0),
             "Zone B (East Gate)": ZoneModel(zone_id="Zone B (East Gate)", current_occupancy=5100, max_capacity=8000, associated_gates="Gates 3-4", velocity=0),
             "Zone C (South Gate)": ZoneModel(zone_id="Zone C (South Gate)", current_occupancy=1500, max_capacity=8000, associated_gates="Gates 5-6", velocity=0)
         }
 
-    async def get_all_zones(self) -> List[Dict[str, Any]]:
+    async def get_all_zones(self) -> list[dict[str, Any]]:
         async with self._lock:
             return [z.model_dump() for z in self._zones.values()]
 
@@ -44,7 +46,7 @@ class StadiumStateManager:
                 return True
             return False
 
-    async def apply_bulk_update(self, new_state: List[Dict[str, Any]]):
+    async def apply_bulk_update(self, new_state: list[dict[str, Any]]):
         async with self._lock:
             self._zones.clear()
             for row in new_state:

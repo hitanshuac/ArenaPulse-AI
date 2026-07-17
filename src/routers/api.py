@@ -1,12 +1,13 @@
+import asyncio
 import csv
 import io
 import json
+
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
-import asyncio
 
-from src.domain.state import StadiumStateManager, ZoneModel
 from src.domain.agent import VolunteerAgent
+from src.domain.state import StadiumStateManager, ZoneModel
 
 api_router = APIRouter(prefix="/api")
 state_manager = StadiumStateManager()

@@ -1,8 +1,10 @@
-import os
-import json
 import hashlib
+import json
+import os
+from typing import Any
+
 import google.generativeai as genai
-from typing import List, Dict, Any
+
 
 class SecureLLMClient:
     """
@@ -14,7 +16,7 @@ class SecureLLMClient:
         self.api_available = True if self.api_key else False
         if self.api_available:
             genai.configure(api_key=self.api_key)
-            
+
         self.response_cache = {}
         self.daily_calls_made = 0
         self.DAILY_LIMIT = 15
@@ -23,7 +25,7 @@ class SecureLLMClient:
         """Creates a unique hash for the current data to check against the cache."""
         return hashlib.md5(json.dumps(data, sort_keys=True).encode('utf-8')).hexdigest()
 
-    def generate_content(self, prompt: str, state_data: Any = None) -> Dict[str, Any]:
+    def generate_content(self, prompt: str, state_data: Any = None) -> dict[str, Any]:
         """
         Executes a secure LLM call with pre-flight and post-flight interception.
         If state_data is provided, checks the memoization cache first.
@@ -45,13 +47,13 @@ class SecureLLMClient:
             self.daily_calls_made += 1
             model = genai.GenerativeModel("gemini-2.5-flash")
             response = model.generate_content(safe_prompt, generation_config={"response_mime_type": "application/json"})
-            
+
             # Post-flight Defense (LLM06)
             result = json.loads(response.text)
-            
+
             if state_hash:
                 self.response_cache[state_hash] = dict(result)
-                
+
             return {"status": "success", "data": result}
         except Exception as e:
             return {"status": "error", "error": str(e), "data": None}

@@ -1,10 +1,11 @@
-import os
 import asyncio
+import os
+
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
 
-from src.routers.api import api_router
 from src.domain.state import StadiumStateManager
+from src.routers.api import api_router
 
 app = FastAPI(
     title="ArenaPulse-AI Volunteer Co-Pilot",
