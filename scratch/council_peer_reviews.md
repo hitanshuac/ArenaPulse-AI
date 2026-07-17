@@ -1,24 +1,24 @@
 **Reviewer 1:**
-1. Response D (Outsider) is the strongest. It perfectly diagnoses the user's anxiety: the refactor was purely structural (backend), making it invisible to the end user. Building the dashboard bridges that gap.
-2. Response A (Contrarian) has the biggest blind spot. Calling the refactor "over-engineering" ignores the very real 15 RPD quota constraint that would crash the app during evaluation.
-3. All responses missed the exact data structure needed. A `df.info()` equivalent needs data types, memory usage, and non-null counts, not just a table of occupancies.
+1. Response E (Executor) is the strongest because it highlights the exact technical reality: the fix is a single line of JavaScript. We already solved the hard part (calculating real velocity in the backend). 
+2. Response C (Expansionist) has a blind spot by suggesting we rebuild the chart to show 3 separate lines. We are finalizing for a hackathon; risking Chart.js rendering bugs to add complexity is unnecessary.
+3. All responses missed that the current Chart.js configuration has a hardcoded `suggestedMax` or might not scale dynamically if the real velocity numbers are much higher than the fake `(occupancy/50)` numbers.
 
 **Reviewer 2:**
-1. Response E (Executor) is strongest because it provides the exact technical path of least resistance: hijack the existing SSE stream (`/api/stadium/stream`) to render the data without touching the backend again.
-2. Response C (Expansionist) has a blind spot regarding time. We are finalizing for a hackathon; suggesting a massive new enterprise dashboard might cause us to run out of time.
-3. All responses failed to address how we prove the *cache* and *quota limits* are working on this new dashboard. Timestamps aren't enough; we need to visualize the memoization hits.
+1. Response B (First Principles) is the most accurate diagnosis. We didn't "choose" to leave it fake; it's just leftover technical debt from Phase 1 before the backend simulation loop existed. 
+2. Response A (Contrarian) is a bit too harsh on the original design. Mocking data early in prototyping is standard practice; it just outlived its usefulness.
+3. All responses missed that we need to ensure the `velocity` field is never undefined in the JS payload, otherwise `zones.reduce` will result in `NaN` and crash the chart.
 
 **Reviewer 3:**
-1. Response B (First Principles) is the strongest. It aligns the user's desire for a dashboard directly with the underlying value of the refactor (quota saving) and suggests visualizing the invisible improvements.
-2. Response D (Outsider) assumes we just need to build a dashboard, but misses that the dashboard needs to specifically prove the *backend's* new capabilities, not just show basic data.
-3. All responses missed the UI/UX impact. Where does this dashboard go? If we just slap a table on the existing UI, it might clutter the volunteer control deck.
+1. Response D (Outsider) correctly identifies the core risk: the "smoke and mirrors" penalty. If a judge sees hardcoded fake math in a system claiming to be AI-driven, credibility is destroyed instantly.
+2. Response B misses the point that "forgetting" to wire it up isn't a good excuse when the user is explicitly pointing out the flaw right now.
+3. All responses missed checking if the backend `velocity` logic is actually producing realistic numbers. `actual_addition * 15` can be quite volatile frame-to-frame.
 
 **Reviewer 4:**
-1. Response E (Executor) wins. It grounds the abstract ideas into a concrete, 20-line HTML/JS implementation using the existing infrastructure.
-2. Response A (Contrarian) is missing the psychological aspect of a hackathon. Judges *love* visible data ingestion metrics. Telling the user not to build it is bad advice.
-3. All responses missed that `df.info` shows structural metadata (dtypes, nulls, memory). A stadium occupancy table isn't `df.info`. We need to show the API quota status and State Manager lock status to truly reflect the backend refactor.
+1. Response E (Executor) wins. Stop analyzing the past and just change the `reduce` function. 
+2. Response D (Outsider) assumes developers always check frontend JS source code. Usually, they check the backend Python first. 
+3. All responses missed that the chart label itself says "Gate Inflow Rate (Fans/Min)". The fake math wasn't just cheap; it was mathematically incorrect for the label.
 
 **Reviewer 5:**
-1. Response D (Outsider) is strongest for identifying the root cause of the user's question: invisible backend work feels like a hallucination until you surface the data.
-2. Response B (First Principles) has a blind spot by suggesting we just modify the existing UI. A separate, distinct "Data Telemetry" panel is closer to what the user asked for (`df.info` style).
-3. All responses missed that the backend `ZoneModel` currently doesn't include a `last_updated` timestamp. If we want to show ingestion timestamps, we have to slightly modify the Pydantic model to include a `timestamp` field.
+1. Response A (Contrarian) is strongest for pointing out that before the state manager refactor, calculating a real derivative was impossible due to stateless HTTP polling.
+2. Response E (Executor) has a blind spot: just changing the `reduce` function might cause a jarring chart jump if the real velocity numbers are an order of magnitude different from the fake ones. 
+3. All responses missed that the `simulateRushHour()` button still relies on the fake data spikes. If we switch to real velocity, we need to make sure the simulation button still generates a visual spike on the chart.
