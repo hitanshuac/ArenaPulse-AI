@@ -21,10 +21,11 @@ class VolunteerAgent:
         # 2. Execute Precious LLM Call
         prompt = f"""
         You are a stadium safety AI for the FIFA World Cup.
-        Analyze this critical telemetry data: {json.dumps(zones)}
+        Analyze this spatial telemetry DAG: {json.dumps(zones)}
 
-        Draft a JSON array containing workflows to mitigate any bottlenecks > 80%.
-        Schema: [{{ "tool_name": "assign_volunteer_tasks", "arguments": {{"zone_id": "", "priority": "HIGH", "instructions": ""}} }}]
+        Draft a JSON array containing workflows to mitigate any bottlenecks (occupancy/max_capacity > 0.80).
+        CRITICAL CROWD PHYSICS RULE: Do NOT deploy mitigations directly at the bottleneck node. You MUST deploy mitigations (e.g. 'Deploy Barriers', 'Speaker Rerouting') at the UPSTREAM nodes to throttle incoming flow.
+        Schema: [{{ "tool_name": "assign_volunteer_tasks", "arguments": {{"zone_id": "<UPSTREAM_NODE_ID>", "priority": "HIGH", "instructions": "<MITIGATION_TYPE>"}} }}]
         """
 
         response = self.llm_client.generate_content(prompt, state_data=zones)
@@ -49,7 +50,8 @@ class VolunteerAgent:
 
         return {
             "decision": f"{prefix} Agent routed bottlenecks.",
-            "execution_trace": execution_trace if execution_trace else ["[LLM Verified] Operations normal."]
+            "execution_trace": execution_trace if execution_trace else ["[LLM Verified] Operations normal."],
+            "tasks": data
         }
 
     def interpret_fan_query(self, query: str, force_llm: bool = False) -> dict[str, Any]:

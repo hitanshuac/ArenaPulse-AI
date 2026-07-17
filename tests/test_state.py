@@ -43,11 +43,11 @@ def test_state_update_occupancy():
     manager._init_state()
 
     async def run_test():
-        success = await manager.update_zone_occupancy("Zone A (North Gate)", 500)
+        success = await manager.update_zone_occupancy("North Gate", 500)
         assert success is True
 
         all_zones = await manager.get_all_zones()
-        zone_a = next(z for z in all_zones if z["zone_id"] == "Zone A (North Gate)")
+        zone_a = next(z for z in all_zones if z["zone_id"] == "North Gate")
 
         assert zone_a["current_occupancy"] == 500
 

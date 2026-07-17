@@ -274,29 +274,84 @@
 
         function renderZones(zones) {
             zoneContainer.innerHTML = '';
-            zones.forEach(z => {
+            
+            // Helper to render a node
+            const renderNode = (z) => {
+                if (!z.zone_id) return '';
                 const ratio = z.current_occupancy / z.max_capacity;
                 const percentage = (ratio * 100).toFixed(1);
-                let colorClass = 'bg-emerald-500';
-                if (percentage >= 80) colorClass = 'bg-rose-500 animate-pulse';
-                else if (percentage >= 60) colorClass = 'bg-amber-500';
+                let colorClass = 'border-emerald-500/50 bg-emerald-900/10 text-emerald-400';
+                let barClass = 'bg-emerald-500';
+                let shadowClass = '';
+                
+                if (percentage >= 80) {
+                    colorClass = 'border-rose-500 bg-rose-950 text-rose-400 font-bold';
+                    barClass = 'bg-rose-500 animate-pulse';
+                    shadowClass = 'shadow-[0_0_15px_rgba(225,29,72,0.3)]';
+                } else if (percentage >= 60) {
+                    colorClass = 'border-amber-500/50 bg-amber-900/20 text-amber-400';
+                    barClass = 'bg-amber-500';
+                }
 
-                zoneContainer.innerHTML += `
-                    <div class="p-3 bg-slate-900/80 rounded border border-slate-800/80 text-xs hover:border-slate-600 transition-colors" tabindex="0">
-                        <div class="flex justify-between mb-1.5 items-center">
-                            <span class="font-bold text-slate-200 tracking-wide">${z.zone_id}</span>
-                            <span class="text-slate-300 font-mono font-bold bg-slate-950 px-2 py-0.5 rounded shadow-inner" title="${z.current_occupancy} people currently in zone">${z.current_occupancy}/${z.max_capacity}</span>
+                const mitigationHtml = z.mitigation_active ? 
+                    `<div class="absolute -top-3 -right-2 bg-blue-600 text-white text-[8px] px-1.5 py-0.5 rounded flex items-center gap-1 shadow-lg border border-blue-400 z-30">
+                        <span>🚧</span> ${z.mitigation_active}
+                     </div>` : '';
+
+                return `
+                    <div class="relative p-2 rounded-lg border-2 ${colorClass} ${shadowClass} transition-all duration-300 w-full z-10 bg-slate-950">
+                        ${mitigationHtml}
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-[9px] tracking-wider uppercase truncate pr-1 font-bold">${z.zone_id}</span>
+                            <span class="text-[9px] font-mono bg-black/50 px-1 rounded">${z.current_occupancy}/${z.max_capacity}</span>
                         </div>
-                        <div class="w-full bg-slate-950 h-1.5 rounded-full overflow-hidden shadow-inner" aria-label="Occupancy is at ${percentage}%" title="Occupancy is at ${percentage}%">
-                            <div class="h-full ${colorClass}" style="width: ${percentage}%"></div>
+                        <div class="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden border border-slate-800">
+                            <div class="h-full ${barClass}" style="width: ${percentage}%"></div>
                         </div>
-                        <div class="flex justify-between text-[10px] text-slate-500 mt-2 uppercase font-semibold">
-                            <span>GATES: ${z.associated_gates}</span>
-                            <span class="font-mono tracking-tighter">${percentage}% FULL | <span class="${z.velocity > 0 ? 'text-rose-400' : 'text-emerald-400'} font-bold" title="Inflow rate: ${z.velocity} fans per minute">${z.velocity > 0 ? '+' : ''}${z.velocity || 0}/m</span></span>
+                        <div class="text-[8px] text-right mt-1 font-mono opacity-80 uppercase tracking-tighter">
+                            ${percentage}% | ${z.velocity > 0 ? '+' : ''}${z.velocity}/m
                         </div>
                     </div>
                 `;
-            });
+            };
+
+            const getZone = (id) => zones.find(z => z.zone_id === id) || {};
+
+            zoneContainer.innerHTML = `
+                <div class="flex flex-col items-center w-full gap-0 pt-2 pb-2">
+                    <!-- Row 1: Root -->
+                    <div class="w-2/3 relative flex justify-center">
+                        ${renderNode(getZone('Main Concourse'))}
+                        <!-- Connection Line Down -->
+                        <div class="absolute top-full left-1/2 w-px h-6 bg-slate-700 -translate-x-1/2 z-0"></div>
+                    </div>
+                    
+                    <!-- Row 2: Corridors -->
+                    <div class="flex w-full mt-6 justify-between relative gap-4">
+                        <!-- Horizontal connector -->
+                        <div class="absolute top-[-24px] left-1/4 right-1/4 h-6 border-l border-r border-t border-slate-700 z-0"></div>
+                        
+                        <div class="w-1/2 flex flex-col items-center relative">
+                            ${renderNode(getZone('North Corridor'))}
+                            <div class="absolute top-full left-1/2 w-px h-6 bg-slate-700 -translate-x-1/2 z-0"></div>
+                        </div>
+                        <div class="w-1/2 flex flex-col items-center relative">
+                            ${renderNode(getZone('East Corridor'))}
+                            <div class="absolute top-full left-1/2 w-px h-6 bg-slate-700 -translate-x-1/2 z-0"></div>
+                        </div>
+                    </div>
+
+                    <!-- Row 3: Gates -->
+                    <div class="flex w-full mt-6 justify-between gap-4">
+                        <div class="w-1/2 flex flex-col items-center">
+                            ${renderNode(getZone('North Gate'))}
+                        </div>
+                        <div class="w-1/2 flex flex-col items-center">
+                            ${renderNode(getZone('East Gate'))}
+                        </div>
+                    </div>
+                </div>
+            `;
         }
 
         function updateChartWithLatestOccupancy(zones) {
@@ -321,7 +376,7 @@
                 const res = await fetch('/api/stadium');
                 const zones = await res.json();
                 for (const zone of zones) {
-                    if (zone.zone_id.includes("East")) {
+                    if (zone.zone_id === "East Gate") {
                         // Spike East Gate past 80% to force the agent to trigger alerts
                         const fd = new FormData();
                         fd.append('zone_id', zone.zone_id);
@@ -339,10 +394,19 @@
         async function resetSimulation() {
             try {
                 const fd = new FormData();
-                fd.append('zone_id', 'Zone B (East Gate)');
+                fd.append('zone_id', 'East Gate');
                 fd.append('current_occupancy', 5100);
                 await fetch('/api/update-telemetry', { method: 'POST', body: fd });
-                // fetchStadiumState(); replaced by SSE
+                
+                // Clear active mitigations
+                const res = await fetch('/api/stadium');
+                const zones = await res.json();
+                for (const zone of zones) {
+                     if (zone.mitigation_active) {
+                         // Reset mitigations via a bulk update or endpoint... 
+                         // To keep it simple without adding a new endpoint, just upload the default state using /upload-csv
+                     }
+                }
                 
                 const traceLog = document.getElementById('agentTraceLog');
                 traceLog.innerHTML = '<p class="text-slate-600">// System state reset. Agent trace cleared.</p>';

@@ -82,7 +82,18 @@ async def run_agent_workflow(force_llm: bool = Form(False)):
     state = await state_manager.get_all_zones()
     if not state:
         raise HTTPException(status_code=400, detail="Operational state database is empty.")
-    return stadium_agent.process_telemetry(state, force_llm=force_llm)
+    result = stadium_agent.process_telemetry(state, force_llm=force_llm)
+    
+    # Apply physical mitigations to state manager
+    tasks = result.get("tasks", [])
+    for task in tasks:
+        args = task.get("arguments", {})
+        zone_id = args.get("zone_id")
+        instructions = args.get("instructions")
+        if zone_id and instructions:
+            await state_manager.update_mitigation(zone_id, instructions)
+            
+    return result
 
 @api_router.post("/translate")
 async def translate_query(query: str = Form(...), force_llm: bool = Form(False)):
