@@ -1,24 +1,24 @@
 **Reviewer 1:**
-1. Response E (Executor) is the strongest. It directly addresses the need for historical context (the user's underlying desire) without requiring a completely new UI page or database, which would derail the project timeline.
-2. Response C (Expansionist) has a massive blind spot regarding time and risk. Building a persistent database and a second dashboard right before a hackathon deadline is a classic recipe for breaking the main app.
-3. All responses missed that the current line chart in `index.html` artificially truncates data after exactly 10 ticks (20 seconds). Fixing the chart's memory is easier than building new backend variables.
+1. Response E (Executor) is the strongest. Reorganizing the existing HTML into explicit numbered steps solves the user's confusion without requiring a massive architectural rebuild right before a deadline.
+2. Response A (Contrarian) has a massive blind spot. Just because an event stream is asynchronous doesn't mean the *human operator's workflow* isn't linear. The human still follows "Detect -> Investigate -> Resolve."
+3. All responses missed that the current HTML is built on a 2-column Tailwind grid (`lg:col-span-5` and `lg:col-span-7`). Shifting to a left-to-right 3-step pipeline might require changing the CSS grid structure.
 
 **Reviewer 2:**
-1. Response B (First Principles) perfectly defends the product's core identity. ArenaPulse-AI is a *live* crisis management tool, not an overnight reporting tool. 
-2. Response A (Contrarian) focuses too much on the technical difficulty (setting up databases) rather than the product misalignment.
-3. All responses missed that if we want to show "total fans processed," the backend `simulate_iot_tick` is already calculating `actual_addition`. We just aren't keeping a running tally.
+1. Response B (First Principles) correctly identifies the industry-standard UI paradigm: the ITIL Incident Management Triage pipeline.
+2. Response C (Expansionist) is too aggressive. Building a ticketing system (Action Queue) is out of scope for a UI layout fix.
+3. All responses missed that the GitHub search results (like `0xJeh/incident-response-dashboard`) emphasize "RCA" (Root Cause Analysis) and "Escalation workflows." We can simulate this simply by visually grouping the AI Engine as the "Escalation" step.
 
 **Reviewer 3:**
-1. Response D (Outsider) nails the UX problem. Fast-updating live dashboards *cause* anxiety unless they are grounded by a longer timeframe. 
-2. Response E assumes we need to touch the Python backend again. If we just stop the JS chart from deleting data after 10 ticks, the chart itself becomes the historical dashboard.
-3. All responses missed the memory implications of letting a live chart run indefinitely in the browser. It needs a reasonable cap (e.g., 5-10 minutes, not infinite).
+1. Response D (Outsider) nails the UX problem. It's not just about layout; it's about state. If the user isn't supposed to click "Run Diagnostics" until a surge happens, that button should ideally be disabled until a surge happens.
+2. Response E assumes dragging and dropping HTML is trivial, but moving elements across the existing left/right columns will break the current responsive layout.
+3. All responses missed the explicit instruction from `.agents/workflows/git-discovery-preflight.md`: the agent MUST halt and ask for user approval before writing custom UI code based on these open-source discoveries.
 
 **Reviewer 4:**
-1. Response E wins by providing the most elegant "lazy" solution: push high-water marks (peaks) to the UI instead of rendering historical timelines.
-2. Response B (First Principles) is a bit too rigid. Knowing that "Zone A is 30% fuller than it was an hour ago" is actually critical for live crisis management.
-3. All responses missed that we could just add a "rolling average" line to the existing chart to smooth out the cognitive overload.
+1. Response B wins for matching the user's request for "tried and tested UI". The Incident Triage Pipeline (Monitor -> Detect -> Mitigate) is the gold standard.
+2. Response D is a bit too complex. Adding JavaScript state logic to enable/disable buttons introduces potential bugs. Visual hierarchy is safer.
+3. All responses missed that the "CSV Upload" and "Simulate Surge" buttons are developer debug tools. They shouldn't be mixed into the operator's incident workflow. They should be moved to a distinct "Developer Sandbox" section.
 
 **Reviewer 5:**
-1. Response D (Outsider) is the strongest for diagnosing the real issue: 20 seconds of data is just noise. A span of time is needed, but a new dashboard is overkill.
-2. Response C (Expansionist) fails to realize that the API Quota tracker we just built *is* a historical metric (daily limit), so we already have some temporal context.
-3. All responses missed the exact solution: just change `if (timeSeriesData.labels.length > 10)` to `> 180` in `index.html`. That gives 6 minutes of visual history without touching the backend or creating new UI panels.
+1. Response E (Executor) provides the most actionable path forward.
+2. Response A (Contrarian) is needlessly defensive of a confusing UI.
+3. All responses missed that the user specifically asked "what's step 1, 2 and so on." The final UI MUST literally contain the text "Step 1", "Step 2", etc., to satisfy the prompt's underlying frustration.

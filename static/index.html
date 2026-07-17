@@ -26,159 +26,181 @@
         </div>
     </header>
 
-    <main class="flex-grow max-w-7xl mx-auto p-4 w-full grid grid-cols-1 lg:grid-cols-12 gap-4" role="main">
-        
-        <!-- Left Column: Live Time-Series Chart & Ingestion -->
-        <section class="lg:col-span-5 flex flex-col gap-4" aria-labelledby="live-telemetry-panel">
-            <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                <div class="flex justify-between items-center mb-4 relative group" tabindex="0" aria-label="This chart visualizes the real-time sum of the velocity (fans per minute) across all active stadium zones. It tracks data over a rolling 5-minute historical window.">
-                    <div class="flex items-center gap-2">
-                        <h2 id="live-telemetry-panel" class="text-md font-semibold text-slate-200">Live Telemetry Trends (Time-Series)</h2>
-                        <span class="text-[10px] cursor-help rounded-full border border-slate-600 w-4 h-4 flex items-center justify-center text-slate-400 bg-slate-900 hover:bg-slate-700" aria-hidden="true">?</span>
-                    </div>
-                    <span class="text-[10px] bg-blue-900/40 text-blue-400 border border-blue-800 px-2 py-0.5 rounded-full">Chart.js Live Feed</span>
-                    <!-- Tooltip popup -->
-                    <div class="absolute top-full left-0 mt-2 hidden group-hover:block group-focus:block w-64 p-3 bg-slate-800 text-slate-200 text-xs rounded shadow-xl z-20 border border-slate-700 leading-relaxed">
-                        <strong>Velocity Aggregate:</strong> This chart visualizes the real-time sum of the inflow rate (fans per minute) across all active stadium zones, displaying a rolling 5-minute historical window.
-                    </div>
-                </div>
-                
-                <!-- Chart Area -->
-                <div class="h-48 w-full mb-4 bg-slate-900/50 p-2 rounded border border-slate-800">
-                    <canvas id="telemetryChart"></canvas>
-                </div>
-
-                <!-- Sim Control Area -->
-                <div class="grid grid-cols-2 gap-2 mb-4">
-                    <button onclick="simulateRushHour()" class="py-2 px-3 bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-800/60 rounded text-xs transition-colors">
-                        Simulate Gate Surge
-                    </button>
-                    <button onclick="resetSimulation()" class="py-2 px-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs transition-colors">
-                        Reset Telemetry
-                    </button>
-                </div>
-
-                <!-- CSV Upload interface -->
-                <div class="p-4 bg-slate-900 border border-dashed border-slate-800 rounded-lg">
-                    <label class="block text-xs font-semibold text-slate-400 mb-2">Upload Stadium Config (CSV)</label>
-                    <input type="file" id="csvFile" accept=".csv" class="block w-full text-xs text-slate-400 file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700" />
-                    <p class="text-[9px] text-slate-500 mt-2">Upload custom stadium layout to override default state telemetry metrics.</p>
-                </div>
-            </div>
-
-            <!-- Data Ingestion & Quota Telemetry Panel -->
-            <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                <div class="flex justify-between items-center mb-3">
-                    <h2 class="text-sm font-semibold tracking-tight text-blue-400">System Telemetry & Ingestion</h2>
-                </div>
-                <div class="grid grid-cols-2 gap-2 text-xs mb-3">
-                    <div class="bg-slate-900 p-2 rounded border border-slate-800 relative group" tabindex="0" aria-label="API Quota allows only 15 LLM requests per day. This metric tracks your current usage to prevent quota exhaustion.">
-                        <div class="flex items-center gap-1.5 mb-1">
-                            <div class="text-slate-500 font-semibold">API Quota (15 RPD)</div>
-                            <span class="text-[9px] cursor-help rounded-full border border-slate-600 w-3.5 h-3.5 flex items-center justify-center text-slate-500 bg-slate-950" aria-hidden="true">?</span>
-                        </div>
-                        <div class="font-mono" id="quotaDisplay">--/15 calls</div>
-                        <!-- Tooltip popup -->
-                        <div class="absolute bottom-full left-0 mb-2 hidden group-hover:block group-focus:block w-48 p-2 bg-slate-800 text-slate-200 text-[10px] rounded shadow-xl z-10 border border-slate-700 leading-tight">
-                            <strong>15 Requests Per Day:</strong> Tracks daily usage of the Gemini API to prevent exhaustion. The system aggressively caches data to conserve these limits.
-                        </div>
-                    </div>
-                    <div class="bg-slate-900 p-2 rounded border border-slate-800 relative group" tabindex="0" aria-label="LLM Cache Hit Pool displays the number of AI decisions saved in memory. When the same stadium state occurs, the system reuses these decisions instead of calling the API, costing zero quota.">
-                        <div class="flex items-center gap-1.5 mb-1">
-                            <div class="text-slate-500 font-semibold">LLM Cache Pool</div>
-                            <span class="text-[9px] cursor-help rounded-full border border-slate-600 w-3.5 h-3.5 flex items-center justify-center text-slate-500 bg-slate-950" aria-hidden="true">?</span>
-                        </div>
-                        <div class="font-mono text-emerald-400" id="cacheDisplay">-- items</div>
-                        <!-- Tooltip popup -->
-                        <div class="absolute bottom-full right-0 mb-2 hidden group-hover:block group-focus:block w-48 p-2 bg-slate-800 text-slate-200 text-[10px] rounded shadow-xl z-10 border border-slate-700 leading-tight">
-                            <strong>Memoization Pool:</strong> Number of AI decisions securely saved in memory. Reusing known states costs 0 API tokens and executes instantly.
-                        </div>
-                    </div>
-                </div>
-                <div class="overflow-x-auto border border-slate-800 rounded bg-slate-900">
-                    <table class="w-full text-left text-[10px] text-slate-400">
-                        <thead class="bg-slate-950 border-b border-slate-800 uppercase">
-                            <tr>
-                                <th class="px-2 py-1.5 font-semibold">Zone_ID</th>
-                                <th class="px-2 py-1.5 font-semibold">DType</th>
-                                <th class="px-2 py-1.5 font-semibold">Last_Updated (ISO)</th>
-                            </tr>
-                        </thead>
-                        <tbody id="ingestionTableBody" class="font-mono">
-                            <!-- Populated dynamically -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Stadium Zone Card List -->
-            <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                <div class="flex items-center gap-2 mb-3 relative group" tabindex="0" aria-label="Live breakdown of individual stadium zones. Displays current occupancy versus maximum safe capacity, and tracks the inflow velocity of fans per minute.">
-                    <h2 class="text-sm font-semibold tracking-tight">Ingested Zone Occupancies</h2>
-                    <span class="text-[10px] cursor-help rounded-full border border-slate-600 w-4 h-4 flex items-center justify-center text-slate-400 bg-slate-900 hover:bg-slate-700" aria-hidden="true">?</span>
-                    <!-- Tooltip popup -->
-                    <div class="absolute top-full left-0 mt-2 hidden group-hover:block group-focus:block w-64 p-3 bg-slate-800 text-slate-200 text-xs rounded shadow-xl z-20 border border-slate-700 leading-relaxed">
-                        <strong>Zone Breakdown:</strong> Live visualization of individual zones. Displays current occupancy versus maximum safe capacity, and tracks inflow velocity.
-                    </div>
-                </div>
-                <div class="space-y-2" id="zoneContainer" aria-live="polite">
-                    <!-- Loaded dynamically -->
-                </div>
-            </div>
-        </section>
-
-        <!-- Right Column: Agent Workflow Trace Console & Translation -->
-        <section class="lg:col-span-7 flex flex-col gap-4" aria-labelledby="operations-intelligence">
+    <main class="flex-grow max-w-7xl mx-auto p-4 w-full flex flex-col gap-6" role="main">
+        <!-- 3-Column Triage Pipeline -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
             
-            <!-- Agent Workflow Dashboard -->
-            <div class="bg-slate-950 p-4 rounded-xl border border-slate-800 flex flex-col gap-3">
-                <div class="flex justify-between items-center">
-                    <div class="relative group" tabindex="0" aria-label="The autonomous reasoning engine. When triggered, it analyzes the live telemetry and drafts mitigation strategies using the LLM.">
-                        <div class="flex items-center gap-2">
-                            <h2 id="operations-intelligence" class="text-md font-semibold text-blue-400">Agentic Workflow Engine</h2>
-                            <span class="text-[10px] cursor-help rounded-full border border-slate-600 w-4 h-4 flex items-center justify-center text-slate-400 bg-slate-900 hover:bg-slate-700" aria-hidden="true">?</span>
+            <!-- Column 1: Step 1 - Global Monitoring -->
+            <section class="flex flex-col gap-4" aria-labelledby="step-1-monitoring">
+                <div class="bg-slate-950 p-4 rounded-xl border border-blue-900/30 shadow-lg relative overflow-hidden">
+                    <div class="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
+                    <h3 class="text-[10px] font-bold text-blue-500 uppercase tracking-widest mb-1 ml-2">Step 1</h3>
+                    <h2 id="step-1-monitoring" class="text-lg font-semibold text-slate-200 mb-4 ml-2">Global Monitoring</h2>
+                    
+                    <!-- Chart Panel -->
+                    <div class="mb-4">
+                        <div class="flex justify-between items-center mb-2 relative group" tabindex="0" aria-label="This chart visualizes the real-time sum of the velocity (fans per minute) across all active stadium zones. It tracks data over a rolling 5-minute historical window.">
+                            <div class="flex items-center gap-2">
+                                <h3 class="text-xs font-semibold text-slate-300">Live Telemetry Trends</h3>
+                                <span class="text-[9px] cursor-help rounded-full border border-slate-600 w-3.5 h-3.5 flex items-center justify-center text-slate-400 bg-slate-900 hover:bg-slate-700" aria-hidden="true">?</span>
+                            </div>
+                            <!-- Tooltip popup -->
+                            <div class="absolute top-full left-0 mt-2 hidden group-hover:block group-focus:block w-64 p-3 bg-slate-800 text-slate-200 text-xs rounded shadow-xl z-20 border border-slate-700 leading-relaxed">
+                                <strong>Velocity Aggregate:</strong> This chart visualizes the real-time sum of the inflow rate (fans per minute) across all active stadium zones, displaying a rolling 5-minute historical window.
+                            </div>
                         </div>
-                        <p class="text-xs text-slate-500">Autonomous processing triggers tools based on live parameters</p>
+                        
+                        <!-- Chart Area -->
+                        <div class="h-40 w-full bg-slate-900/80 p-2 rounded border border-slate-800">
+                            <canvas id="telemetryChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Data Ingestion & Quota Telemetry Panel -->
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <h3 class="text-xs font-semibold text-slate-300">System Telemetry & Ingestion</h3>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 text-xs mb-3">
+                            <div class="bg-slate-900 p-2 rounded border border-slate-800 relative group" tabindex="0" aria-label="API Quota allows only 15 LLM requests per day. This metric tracks your current usage to prevent quota exhaustion.">
+                                <div class="flex items-center gap-1.5 mb-1">
+                                    <div class="text-slate-500 font-semibold text-[10px] uppercase">API Quota</div>
+                                    <span class="text-[9px] cursor-help rounded-full border border-slate-600 w-3.5 h-3.5 flex items-center justify-center text-slate-500 bg-slate-950" aria-hidden="true">?</span>
+                                </div>
+                                <div class="font-mono text-sm" id="quotaDisplay">--/15 calls</div>
+                                <!-- Tooltip popup -->
+                                <div class="absolute bottom-full left-0 mb-2 hidden group-hover:block group-focus:block w-48 p-2 bg-slate-800 text-slate-200 text-[10px] rounded shadow-xl z-10 border border-slate-700 leading-tight">
+                                    <strong>15 Requests Per Day:</strong> Tracks daily usage of the Gemini API to prevent exhaustion. The system aggressively caches data to conserve these limits.
+                                </div>
+                            </div>
+                            <div class="bg-slate-900 p-2 rounded border border-slate-800 relative group" tabindex="0" aria-label="LLM Cache Hit Pool displays the number of AI decisions saved in memory. When the same stadium state occurs, the system reuses these decisions instead of calling the API, costing zero quota.">
+                                <div class="flex items-center gap-1.5 mb-1">
+                                    <div class="text-slate-500 font-semibold text-[10px] uppercase">Cache Pool</div>
+                                    <span class="text-[9px] cursor-help rounded-full border border-slate-600 w-3.5 h-3.5 flex items-center justify-center text-slate-500 bg-slate-950" aria-hidden="true">?</span>
+                                </div>
+                                <div class="font-mono text-sm text-emerald-400" id="cacheDisplay">-- items</div>
+                                <!-- Tooltip popup -->
+                                <div class="absolute bottom-full right-0 mb-2 hidden group-hover:block group-focus:block w-48 p-2 bg-slate-800 text-slate-200 text-[10px] rounded shadow-xl z-10 border border-slate-700 leading-tight">
+                                    <strong>Memoization Pool:</strong> Number of AI decisions securely saved in memory. Reusing known states costs 0 API tokens and executes instantly.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto border border-slate-800 rounded bg-slate-900">
+                            <table class="w-full text-left text-[10px] text-slate-400">
+                                <thead class="bg-slate-950 border-b border-slate-800 uppercase">
+                                    <tr>
+                                        <th class="px-2 py-1.5 font-semibold">Zone_ID</th>
+                                        <th class="px-2 py-1.5 font-semibold">DType</th>
+                                        <th class="px-2 py-1.5 font-semibold">Last_Upd</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ingestionTableBody" class="font-mono">
+                                    <!-- Populated dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Column 2: Step 2 - Threat Detection -->
+            <section class="flex flex-col gap-4" aria-labelledby="step-2-detection">
+                <div class="bg-slate-950 p-4 rounded-xl border border-amber-900/30 shadow-lg relative overflow-hidden h-full">
+                    <div class="absolute top-0 left-0 w-1 h-full bg-amber-500"></div>
+                    <h3 class="text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1 ml-2">Step 2</h3>
+                    <div class="flex items-center gap-2 mb-4 ml-2 relative group" tabindex="0" aria-label="Live breakdown of individual stadium zones. Displays current occupancy versus maximum safe capacity, and tracks the inflow velocity of fans per minute.">
+                        <h2 id="step-2-detection" class="text-lg font-semibold text-slate-200">Threat Detection</h2>
+                        <span class="text-[10px] cursor-help rounded-full border border-slate-600 w-4 h-4 flex items-center justify-center text-slate-400 bg-slate-900 hover:bg-slate-700" aria-hidden="true">?</span>
                         <!-- Tooltip popup -->
                         <div class="absolute top-full left-0 mt-2 hidden group-hover:block group-focus:block w-64 p-3 bg-slate-800 text-slate-200 text-xs rounded shadow-xl z-20 border border-slate-700 leading-relaxed">
-                            <strong>Reasoning Engine:</strong> Analyzes telemetry and utilizes the language model to automatically draft optimal mitigation and routing strategies.
+                            <strong>Zone Breakdown:</strong> Live visualization of individual zones. Displays current occupancy versus maximum safe capacity, and tracks inflow velocity. Red flashes indicate a surge threshold breach.
                         </div>
                     </div>
-                    <div class="flex items-center gap-3">
-                        <label class="flex items-center gap-2 text-xs text-amber-400 font-semibold cursor-pointer" title="Only 15 requests allowed per day!">
-                            <input type="checkbox" id="llmToggle" class="accent-amber-500 w-4 h-4">
-                            Use Live LLM (Costly)
-                        </label>
-                        <button onclick="runAgentWorkflow()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded transition-colors focus:ring focus:ring-blue-500 focus:outline-none" aria-label="Run Diagnostics Workflow">
-                            Run Diagnostics
-                        </button>
+                    
+                    <div class="space-y-3" id="zoneContainer" aria-live="polite">
+                        <!-- Loaded dynamically -->
                     </div>
                 </div>
+            </section>
 
-                <div id="agentSummary" aria-live="polite" class="text-xs text-slate-400 bg-slate-900 p-2.5 rounded border border-slate-800">
-                    <strong>Status:</strong> Idle. Ready to receive incoming stadium telemetry.
+            <!-- Column 3: Step 3 - Agentic Escalation -->
+            <section class="flex flex-col gap-4" aria-labelledby="step-3-escalation">
+                <div class="bg-slate-950 p-4 rounded-xl border border-rose-900/30 shadow-lg relative overflow-hidden">
+                    <div class="absolute top-0 left-0 w-1 h-full bg-rose-500"></div>
+                    <h3 class="text-[10px] font-bold text-rose-500 uppercase tracking-widest mb-1 ml-2">Step 3</h3>
+                    <h2 id="step-3-escalation" class="text-lg font-semibold text-slate-200 mb-4 ml-2">Agentic Escalation</h2>
+                    
+                    <!-- Agent Workflow Dashboard -->
+                    <div class="mb-6 flex flex-col gap-3">
+                        <div class="flex justify-between items-start">
+                            <div class="relative group" tabindex="0" aria-label="The autonomous reasoning engine. When triggered, it analyzes the live telemetry and drafts mitigation strategies using the LLM.">
+                                <div class="flex items-center gap-2">
+                                    <h3 class="text-sm font-semibold text-slate-300">Workflow Engine</h3>
+                                    <span class="text-[10px] cursor-help rounded-full border border-slate-600 w-3.5 h-3.5 flex items-center justify-center text-slate-400 bg-slate-900 hover:bg-slate-700" aria-hidden="true">?</span>
+                                </div>
+                                <p class="text-[10px] text-slate-500 mt-1">Autonomous LLM drafting</p>
+                                <!-- Tooltip popup -->
+                                <div class="absolute top-full left-0 mt-2 hidden group-hover:block group-focus:block w-56 p-3 bg-slate-800 text-slate-200 text-xs rounded shadow-xl z-20 border border-slate-700 leading-relaxed">
+                                    <strong>Reasoning Engine:</strong> Analyzes telemetry and utilizes the language model to automatically draft optimal mitigation and routing strategies.
+                                </div>
+                            </div>
+                            <div class="flex flex-col items-end gap-2">
+                                <button onclick="runAgentWorkflow()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded shadow transition-colors focus:ring focus:ring-blue-500 focus:outline-none" aria-label="Run Diagnostics Workflow">
+                                    Run Diagnostics
+                                </button>
+                                <label class="flex items-center gap-1.5 text-[10px] text-amber-400 font-semibold cursor-pointer" title="Only 15 requests allowed per day!">
+                                    <input type="checkbox" id="llmToggle" class="accent-amber-500 w-3 h-3">
+                                    Live API
+                                </label>
+                            </div>
+                        </div>
+
+                        <div id="agentSummary" aria-live="polite" class="text-xs text-slate-400 bg-slate-900 p-2.5 rounded border border-slate-800">
+                            <strong>Status:</strong> Idle.
+                        </div>
+
+                        <div id="agentTraceLog" aria-live="assertive" class="p-3 bg-black rounded-lg font-mono text-[10px] space-y-1.5 border border-slate-800 max-h-40 overflow-y-auto shadow-inner">
+                            <p class="text-slate-600">// Agent trace pipeline initialized.</p>
+                        </div>
+                    </div>
+
+                    <hr class="border-slate-800 mb-6">
+
+                    <!-- Translation Desk -->
+                    <div class="flex flex-col gap-3">
+                        <h3 class="text-sm font-semibold text-emerald-400">Field Translation Desk</h3>
+                        <p class="text-[10px] text-slate-400 leading-tight">Translate distress reports or local queries from visiting fans to identify medical alarms.</p>
+                        
+                        <form onsubmit="submitTranslationQuery(event)" class="flex flex-col gap-2">
+                            <textarea id="fanInput" placeholder="e.g. 'Tengo un dolor de pecho...'" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs focus:outline-none focus:border-emerald-500 text-slate-200" rows="2" required></textarea>
+                            <button type="submit" class="w-full py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded shadow transition-colors">Classify Ticket</button>
+                        </form>
+
+                        <div id="translateResult" class="p-3 bg-slate-900 rounded border border-slate-800 hidden text-[10px]">
+                            <!-- Translate returns here -->
+                        </div>
+                    </div>
                 </div>
+            </section>
+        </div>
 
-                <div id="agentTraceLog" aria-live="assertive" class="p-3 bg-black rounded-lg font-mono text-xs space-y-1.5 border border-slate-800 max-h-60 overflow-y-auto shadow-inner">
-                    <p class="text-slate-600">// Agent trace pipeline initialized. Awaiting events...</p>
+        <!-- Developer Sandbox Footer (Visually separated) -->
+        <div class="mt-8 bg-slate-950 p-4 rounded border border-slate-800 border-dashed">
+            <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-3">Developer Sandbox (Debug Controls)</h2>
+            <div class="flex flex-wrap gap-4 items-center">
+                <button onclick="simulateRushHour()" class="py-1.5 px-3 bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-800/60 rounded text-xs transition-colors">
+                    Simulate Gate Surge
+                </button>
+                <button onclick="resetSimulation()" class="py-1.5 px-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs transition-colors">
+                    Reset Telemetry
+                </button>
+                <div class="h-6 w-px bg-slate-800 mx-2 hidden sm:block"></div>
+                <div class="flex items-center gap-2">
+                    <label class="text-[10px] font-semibold text-slate-500">Upload CSV Config:</label>
+                    <input type="file" id="csvFile" accept=".csv" class="text-[10px] text-slate-400 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-[10px] file:font-semibold file:bg-slate-800 file:text-slate-300 hover:file:bg-slate-700" />
                 </div>
             </div>
-
-            <!-- Translation Desk -->
-            <div class="bg-slate-950 p-5 rounded-xl border border-slate-800 flex flex-col gap-4">
-                <h2 class="text-md font-semibold text-emerald-400">Multilingual Field Translation Desk</h2>
-                <p class="text-xs text-slate-400">Translate distress reports or local queries from visiting fans. The engine assesses urgency and isolates medical alarms.</p>
-                
-                <form onsubmit="submitTranslationQuery(event)" class="flex flex-col gap-3">
-                    <textarea id="fanInput" placeholder="e.g. 'Tengo un dolor de pecho terrible y me separé de mi familia...'" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-3 text-xs focus:outline-none focus:border-emerald-500 text-slate-200" rows="2" required></textarea>
-                    <button type="submit" class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded transition-colors">Submit Report & Classify</button>
-                </form>
-
-                <div id="translateResult" class="p-4 bg-slate-900 rounded border border-slate-800 hidden text-xs">
-                    <!-- Translate returns here -->
-                </div>
-            </div>
-        </section>
+        </div>
     </main>
 
     <footer class="border-t border-slate-800 bg-slate-950 p-4 mt-auto text-center" role="contentinfo">
