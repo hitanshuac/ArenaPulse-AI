@@ -159,3 +159,17 @@ graph TD
 This Agentic Environment architecture is built upon the foundational concepts and skills cloned and adapted from the **study antigravity** repository. Massive credit to the original author for the design patterns and capabilities that power this framework.
 
 [View Agentic Environment Documentation](AGENT_DOCS.md)
+
+## 🛡️ Security & API Governance
+
+To ensure robust operation within strict daily limits (15 RPD for Gemini 2.5 Flash) and prevent dangerous LLM hallucinations, this system employs:
+
+* **XML Prompt Injection Defense:** Untrusted user input is explicitly isolated within `<FAN_INPUT>` boundaries in the prompt, preventing command injection.
+* **15 RPD Quota Optimization (Batched Queueing):** The application queues incoming telemetry anomalies and flushes them in automated batches utilizing a strict `BatchResponseEnvelope` Pydantic payload, drastically reducing API calls.
+* **Whitebox AI Logic (Zero Hallucination):** Critical safety decisions, such as routing and gate selections, are executed mathematically in Python. The LLM is constrained strictly to function as a Multilingual Communications Engine, formatting announcements without controlling system state.
+
+### 💰 Extreme Quota Conservation Architecture (15 RPD Optimization)
+Operating on Gemini 2.5 Flash's strict 15 Requests-Per-Day limit required shifting from a naive polling chatbot to an enterprise-grade caching engine.
+
+* **State Caching (Memoization):** The backend hashes the telemetry arrays. If the layout hasn't critically changed, it serves cached JSON decisions—costing 0 API tokens and ensuring judges can click test buttons repeatedly without crashing the app limit.
+* **Human-In-The-Loop Escalation:** The real-time SSE chart runs on a 100% free deterministic Edge engine. The LLM is locked behind an explicit UI toggle (Use Live LLM), ensuring the AI is only fired when high-level reasoning is absolutely required.

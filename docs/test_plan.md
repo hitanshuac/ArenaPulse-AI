@@ -1,54 +1,50 @@
-# Universal Test Plan
+# Test Plan: Agentic Refactor
 
-**Target Framework:** Pytest (FastAPI / Python)
-**Target Modules:** `app/main.py`, `app/agent_engine.py` (Missing Coverage)
+**Language / Framework**: Python / Pytest
 
-## Fixture Plan (Phase 2.5 I/O Gate)
-Since `app/main.py` processes CSV uploads, the following fixtures will be created in `tests/fixtures/`:
-1. `stadium_canonical.csv` (Valid schema)
-2. `stadium_invalid.csv` (Malformed/Missing columns)
-3. `stadium_empty.csv` (Empty edges case)
+This test plan enforces the Universal Test Automation constraints and provides strict red-green validation for the new `src/` modules.
 
-## Test Cases
+## 1. Domain State Management (Unit Tests)
+**File**: `tests/test_state.py`
 
-### 1. `test_get_stadium_state`
-- **Test Type:** Unit
-- **Setup:** FastAPI `TestClient` initialized.
-- **Action:** `GET /api/stadium`
-- **Assertion:** Returns 200 OK. Matches default `active_stadium_state` schema.
+*   **Test Name**: `test_zone_model_validation`
+    *   **Type**: Unit
+    *   **Setup**: None.
+    *   **Action**: Attempt to instantiate `ZoneModel` with negative capacity or invalid types.
+    *   **Assertion**: Must raise Pydantic `ValidationError`.
 
-### 2. `test_update_telemetry`
-- **Test Type:** Unit
-- **Setup:** FastAPI `TestClient` initialized.
-- **Action:** `POST /api/update-telemetry` with `zone_id="Zone A (North Gate)"` and `current_occupancy=4500`.
-- **Assertion:** Returns 200 OK. State updates successfully.
+*   **Test Name**: `test_state_manager_singleton`
+    *   **Type**: Unit
+    *   **Setup**: Instantiate two `StadiumStateManager` objects.
+    *   **Action**: Compare the IDs of the two instances.
+    *   **Assertion**: Must be identical (singleton pattern).
 
-### 3. `test_update_telemetry_not_found`
-- **Test Type:** Unit
-- **Setup:** FastAPI `TestClient` initialized.
-- **Action:** `POST /api/update-telemetry` with invalid `zone_id="Ghost Zone"`.
-- **Assertion:** Returns 404 Not Found.
+*   **Test Name**: `test_state_update_occupancy`
+    *   **Type**: Unit (Async)
+    *   **Setup**: Initialize `StadiumStateManager`.
+    *   **Action**: Call `await manager.update_zone_occupancy("Zone A (North Gate)", 500)`.
+    *   **Assertion**: Must return `True` and `get_all_zones` should reflect the 500 occupancy.
 
-### 4. `test_upload_csv_success`
-- **Test Type:** Integration (I/O)
-- **Setup:** Load `tests/fixtures/stadium_canonical.csv`.
-- **Action:** `POST /api/upload-csv` with file payload.
-- **Assertion:** Returns 200 OK. `active_stadium_state` is overwritten with fixture data.
+## 2. Secure LLM Client Interceptor (Integration Tests)
+**File**: `tests/test_secure_llm_client.py`
 
-### 5. `test_upload_csv_invalid_schema`
-- **Test Type:** Integration (I/O)
-- **Setup:** Load `tests/fixtures/stadium_invalid.csv`.
-- **Action:** `POST /api/upload-csv` with file payload.
-- **Assertion:** Returns 400 Bad Request. Exception caught gracefully.
+*   **Test Name**: `test_client_memoization_cache`
+    *   **Type**: Integration (Mocked AI SDK)
+    *   **Setup**: Mock `genai.GenerativeModel.generate_content`.
+    *   **Action**: Call `SecureLLMClient.generate_content` twice with identical state arrays.
+    *   **Assertion**: First call should hit the mock, second call should return `{"status": "cached"}` and the mock call count should strictly equal 1.
 
-### 6. `test_agent_engine_process_telemetry_safe`
-- **Test Type:** Unit
-- **Setup:** Instantiate `VolunteerAgent`. Ensure `api_available` is bypassed or mocked safely.
-- **Action:** Call `process_telemetry()` with zones <80% capacity.
-- **Assertion:** Returns safe decision string. Execution trace is empty or notes no action required.
+*   **Test Name**: `test_client_quota_exhaustion`
+    *   **Type**: Integration
+    *   **Setup**: Set `client.daily_calls_made = 15`.
+    *   **Action**: Call `SecureLLMClient.generate_content`.
+    *   **Assertion**: Must immediately return `{"status": "quota_exhausted"}` without invoking the SDK.
 
-### 7. `test_agent_engine_translate_critical`
-- **Test Type:** Unit
-- **Setup:** Instantiate `VolunteerAgent`.
-- **Action:** Call `interpret_fan_query("Doctor, help!")`.
-- **Assertion:** `urgency_level` == "CRITICAL".
+## 3. API Routers (Integration Tests)
+**File**: `tests/test_api.py`
+
+*   **Test Name**: `test_update_telemetry_endpoint`
+    *   **Type**: Integration
+    *   **Setup**: Launch `TestClient` pointing to `src.main.app`.
+    *   **Action**: POST to `/api/update-telemetry` with `zone_id` and `current_occupancy`.
+    *   **Assertion**: Must return `200 OK` and the subsequent GET to `/api/stadium` must reflect the new value.

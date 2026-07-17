@@ -78,9 +78,15 @@
                         <h2 id="operations-intelligence" class="text-md font-semibold text-blue-400">Agentic Workflow Engine</h2>
                         <p class="text-xs text-slate-500">Autonomous processing triggers tools based on live parameters</p>
                     </div>
-                    <button onclick="runAgentWorkflow()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded transition-colors focus:ring focus:ring-blue-500 focus:outline-none" aria-label="Run Diagnostics Workflow">
-                        Run Diagnostics
-                    </button>
+                    <div class="flex items-center gap-3">
+                        <label class="flex items-center gap-2 text-xs text-amber-400 font-semibold cursor-pointer" title="Only 15 requests allowed per day!">
+                            <input type="checkbox" id="llmToggle" class="accent-amber-500 w-4 h-4">
+                            Use Live LLM (Costly)
+                        </label>
+                        <button onclick="runAgentWorkflow()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded transition-colors focus:ring focus:ring-blue-500 focus:outline-none" aria-label="Run Diagnostics Workflow">
+                            Run Diagnostics
+                        </button>
+                    </div>
                 </div>
 
                 <div id="agentSummary" aria-live="polite" class="text-xs text-slate-400 bg-slate-900 p-2.5 rounded border border-slate-800">
@@ -257,24 +263,33 @@
             const summaryBox = document.getElementById('agentSummary');
             const traceLog = document.getElementById('agentTraceLog');
             
+            const useLlm = document.getElementById('llmToggle') ? document.getElementById('llmToggle').checked : false;
+            
             summaryBox.innerHTML = '<strong>Status:</strong> Processing current telemetry datasets...';
             traceLog.innerHTML = '<p class="text-blue-500">// Processing real-time telemetry inputs...</p>';
             
+            const formData = new FormData();
+            formData.append('force_llm', useLlm);
+            
             try {
-                const res = await fetch('/api/agent/run', { method: 'POST' });
+                const res = await fetch('/api/agent/run', { method: 'POST', body: formData });
                 const d = await res.json();
 
                 summaryBox.innerHTML = `<strong>Status:</strong> ${d.decision}`;
                 traceLog.innerHTML = '';
                 
-                d.execution_trace.forEach(trace => {
-                    let textClass = 'text-slate-300';
-                    if (trace.includes('[Escalation]')) textClass = 'text-rose-400 font-bold';
-                    else if (trace.includes('[Task]')) textClass = 'text-amber-400';
-                    else if (trace.includes('[Dispatched]')) textClass = 'text-emerald-400';
-                    
-                    traceLog.innerHTML += `<div class="${textClass} border-l-2 pl-2 border-slate-800 py-0.5">${trace}</div>`;
-                });
+                if (d.execution_trace && d.execution_trace.length > 0) {
+                    d.execution_trace.forEach(trace => {
+                        let textClass = 'text-slate-300';
+                        if (trace.includes('[Escalation]')) textClass = 'text-rose-400 font-bold';
+                        else if (trace.includes('[Task]') || trace.includes('[LLM Task Assigned]')) textClass = 'text-amber-400';
+                        else if (trace.includes('[Dispatched]')) textClass = 'text-emerald-400';
+                        
+                        traceLog.innerHTML += `<div class="${textClass} border-l-2 pl-2 border-slate-800 py-0.5 mb-1">${trace}</div>`;
+                    });
+                } else {
+                    traceLog.innerHTML += `<div class="text-slate-300 border-l-2 pl-2 border-slate-800 py-0.5">Queue was empty. No actions taken.</div>`;
+                }
             } catch (err) {
                 summaryBox.innerHTML = '<strong>Status:</strong> Connection error.';
                 traceLog.innerHTML = '<p class="text-rose-500">[ERROR] Failed to query local agentic orchestration framework.</p>';
@@ -289,8 +304,11 @@
             resultBox.classList.remove('hidden');
             resultBox.innerHTML = '<p class="text-slate-400 animate-pulse">// Running classification model...</p>';
 
+            const useLlm = document.getElementById('llmToggle') ? document.getElementById('llmToggle').checked : false;
+            
             const formData = new FormData();
             formData.append('query', query);
+            formData.append('force_llm', useLlm);
 
             try {
                 const res = await fetch('/api/translate', { method: 'POST', body: formData });
