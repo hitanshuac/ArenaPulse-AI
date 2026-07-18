@@ -166,14 +166,18 @@ class StadiumStateManager:
 
     def _build_gravity_map(self):
         """Precomputes distances to 'sinks' for fluid dynamic routing."""
-        # Gravity levels: Seating=0, Corridors=1, Turnstiles=2, Plazas=3, External=4
+        # Gravity levels: Seating=0, Corridors=1, Turnstiles=2, Plazas=3.5, External=4
         gmap = {}
         for zid, z in self._zones.items():
             if z.node_type == "seating": gmap[zid] = 0
             elif z.node_type == "amenity": gmap[zid] = 1
             elif z.node_type == "corridor": gmap[zid] = 2
             elif z.node_type == "turnstile": gmap[zid] = 3
-            elif z.node_type == "external": gmap[zid] = 4
+            elif z.node_type == "external": 
+                if "Plaza" in zid:
+                    gmap[zid] = 3.5
+                else:
+                    gmap[zid] = 4
         return gmap
 
     # ------------------------------------------------------------------
@@ -279,13 +283,14 @@ class StadiumStateManager:
                         ext.current_occupancy = min(ext.max_capacity, ext.current_occupancy + add)
                         ext.inflow_rate += add
             elif self.current_phase == "EGRESS":
-                for bowl_id in ["Bowl NW", "Bowl NE", "Bowl SW", "Bowl SE"]:
-                    if bowl_id in self._zones:
-                        bowl = self._zones[bowl_id]
+                # Drain people out of the system from the Parking Lots
+                for ext_id in ["Parking A", "Parking B"]:
+                    if ext_id in self._zones:
+                        ext = self._zones[ext_id]
                         sub = random.randint(100, 300)
-                        if bowl.current_occupancy >= sub:
-                            bowl.current_occupancy -= sub
-                            bowl.outflow_rate += sub
+                        if ext.current_occupancy >= sub:
+                            ext.current_occupancy -= sub
+                            ext.outflow_rate += sub
 
             # Reset tick velocities
             for z in self._zones.values():
@@ -353,11 +358,6 @@ class StadiumStateManager:
 
             # Update net velocities
             for zone in self._zones.values():
-                # Add random local fluctuation
-                fluctuate = random.randint(0, 5)
-                zone.current_occupancy += fluctuate
-                zone.inflow_rate += fluctuate
-                
                 # People per minute scaling (tick is ~5s but simulated as faster)
                 zone.net_velocity = (zone.inflow_rate - zone.outflow_rate) * 5
                 zone.last_updated = datetime.utcnow().isoformat() + "Z"
