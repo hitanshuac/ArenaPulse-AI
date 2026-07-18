@@ -16,7 +16,6 @@ Before writing any code, the agent MUST read the target files and map the curren
 2. **Implicit Data Busses**: Untyped global state, flat dictionaries, or session states used to pass data between detached functions.
 3. **Side Effects**: Database writes, file I/O, or external API calls happening inside rendering loops or pure logic functions.
 4. **Resource Churn**: Redundant network/database connections created and destroyed inside rapid execution loops.
-5. **Phantom Architecture**: Dead code, unused modules, or decorative schemas that are defined but never enforced.
 
 *Deliverable:* The agent MUST generate a clear representation (textual, bulleted, or diagrammatic) of the exact "As-Is" data flow to visualize the entanglement.
 
@@ -42,11 +41,11 @@ The agent must formulate a new architecture adhering strictly to the **Separatio
 The agent must draft a precise, actionable execution plan marking specific file changes using the following tags:
 - `[NEW] <filename>`: For new, extracted service modules.
 - `[MODIFY] <filename>`: For files being stripped down to thin orchestrators.
-- `[DELETE] <filename>`: For dead code or phantom architecture.
+- `[DELETE] <filename>`: For components entirely replaced by the new architecture.
 
 ## Phase 5: Verification & Safety Gates
 Before executing the plan, the agent MUST:
-1. **Deterministic Decoupling Check**: Before proposing any `[DELETE]` action for phantom architecture or unused modules, the agent MUST execute programmatic `grep_search` operations to mathematically prove zero downstream dependencies exist in the codebase.
+1. **Deterministic Decoupling Check**: Before proposing any `[DELETE]` action for replaced modules, the agent MUST execute programmatic `grep_search` operations to mathematically prove zero downstream dependencies exist in the new codebase.
 2. Generate an `implementation_plan.md` artifact incorporating Phases 1-5.
 3. Explicitly ask for human approval before proceeding.
 4. Ensure the test suite is mapped to be updated alongside the refactor.
