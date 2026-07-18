@@ -1,6 +1,7 @@
 import hashlib
 import json
 import os
+from datetime import datetime, timezone
 from typing import Any
 
 import google.generativeai as genai
@@ -18,8 +19,40 @@ class SecureLLMClient:
             genai.configure(api_key=self.api_key)
 
         self.response_cache = {}
-        self.daily_calls_made = 0
         self.DAILY_LIMIT = 15
+        self.quota_file = os.path.join("data", "quota.json")
+        self.daily_calls_made = self._load_quota()
+
+    def _load_quota(self) -> int:
+        """Loads the API quota from persistent storage, resetting if it's a new day."""
+        os.makedirs("data", exist_ok=True)
+        today = datetime.now(timezone.utc).date().isoformat()
+        
+        try:
+            if os.path.exists(self.quota_file):
+                with open(self.quota_file, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                    
+                if data.get("last_reset_date") == today:
+                    return data.get("calls_made", 0)
+        except Exception:
+            pass
+            
+        # It's a new day (or file missing/corrupt), reset quota to 0
+        return 0
+
+    def _save_quota(self):
+        """Flushes the current API quota to persistent storage."""
+        today = datetime.now(timezone.utc).date().isoformat()
+        data = {
+            "last_reset_date": today,
+            "calls_made": self.daily_calls_made
+        }
+        try:
+            with open(self.quota_file, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=2)
+        except Exception:
+            pass
 
     def invalidate_cache_for_state(self, state_data: Any) -> bool:
         """Evicts a poisoned cache entry when downstream validation fails."""
@@ -53,7 +86,9 @@ class SecureLLMClient:
 
         try:
             self.daily_calls_made += 1
-            model = genai.GenerativeModel("gemini-2.5-flash")
+            self._save_quota()
+            
+            model = genai.GenerativeModel("gemini-3.5-flash")
             response = model.generate_content(safe_prompt, generation_config={"response_mime_type": "application/json"})
 
             # Post-flight Defense (LLM06)
