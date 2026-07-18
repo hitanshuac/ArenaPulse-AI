@@ -105,33 +105,33 @@ class StadiumStateManager:
             ),
             # --- Corridors ---
             "North Concourse": ZoneModel(
-                zone_id="North Concourse", node_type="corridor", current_occupancy=800, max_capacity=4000,
+                zone_id="North Concourse", node_type="corridor", current_occupancy=800, max_capacity=10000,
                 associated_gates="Internal N", connected_nodes=["Gate A", "Food Court", "Bowl NW"],
                 width_m=8.0, length_m=120.0, throughput_capacity_pph=2400
             ),
             "Main Concourse": ZoneModel(
-                zone_id="Main Concourse", node_type="corridor", current_occupancy=3000, max_capacity=12000,
+                zone_id="Main Concourse", node_type="corridor", current_occupancy=3000, max_capacity=30000,
                 associated_gates="Central", connected_nodes=["Gate B", "Gate C", "Food Court", "Medical Bay", "Restroom Zone", "Bowl NE", "Bowl SE"],
                 width_m=12.0, length_m=200.0, throughput_capacity_pph=6000
             ),
             "South Concourse": ZoneModel(
-                zone_id="South Concourse", node_type="corridor", current_occupancy=600, max_capacity=4000,
+                zone_id="South Concourse", node_type="corridor", current_occupancy=600, max_capacity=10000,
                 associated_gates="Internal S", connected_nodes=["Gate D", "Restroom Zone", "Bowl SW"],
                 width_m=8.0, length_m=120.0, throughput_capacity_pph=2400
             ),
             # --- Amenities ---
             "Food Court": ZoneModel(
-                zone_id="Food Court", node_type="amenity", current_occupancy=400, max_capacity=2000,
+                zone_id="Food Court", node_type="amenity", current_occupancy=400, max_capacity=10000,
                 associated_gates="F&B Area", connected_nodes=["North Concourse", "Main Concourse"],
                 width_m=30.0, length_m=20.0, throughput_capacity_pph=800
             ),
             "Medical Bay": ZoneModel(
-                zone_id="Medical Bay", node_type="amenity", current_occupancy=5, max_capacity=50,
+                zone_id="Medical Bay", node_type="amenity", current_occupancy=5, max_capacity=100,
                 associated_gates="Medical", connected_nodes=["Main Concourse"],
                 width_m=10.0, length_m=10.0, throughput_capacity_pph=200
             ),
             "Restroom Zone": ZoneModel(
-                zone_id="Restroom Zone", node_type="amenity", current_occupancy=80, max_capacity=300,
+                zone_id="Restroom Zone", node_type="amenity", current_occupancy=80, max_capacity=5000,
                 associated_gates="Facilities", connected_nodes=["Main Concourse", "South Concourse"],
                 width_m=15.0, length_m=10.0, throughput_capacity_pph=600
             ),
@@ -314,18 +314,28 @@ class StadiumStateManager:
                     
                     # Calculate flow potential based on phase
                     flow_amount = 0
-                    if self.current_phase == "INGRESS":
-                        if my_g > nbr_g: # e.g. External(4) to Turnstile(3)
-                            flow_amount = int(zone.current_occupancy * 0.1)
-                    elif self.current_phase == "EGRESS":
-                        if my_g < nbr_g: # e.g. Seating(0) to Corridor(2)
-                            flow_amount = int(zone.current_occupancy * 0.15)
-                    elif self.current_phase == "MATCH":
-                        # Bidirectional milling between adjacent nodes
-                        # High occupancy naturally diffuses
-                        ratio_diff = (zone.current_occupancy / zone.max_capacity) - (self._zones[neighbor_id].current_occupancy / self._zones[neighbor_id].max_capacity)
-                        if ratio_diff > 0.1:
-                            flow_amount = int(zone.current_occupancy * 0.02)
+                    
+                    neighbor_zone = self._zones[neighbor_id]
+                    if neighbor_zone.node_type == "amenity":
+                        # Amenities absorb a tiny trickle from corridors
+                        if (neighbor_zone.current_occupancy / neighbor_zone.max_capacity) < 0.7:
+                            flow_amount = int(zone.current_occupancy * 0.01)
+                    elif zone.node_type == "amenity":
+                        # Amenities constantly drain back into corridors to avoid black holes
+                        flow_amount = int(zone.current_occupancy * 0.15)
+                    else:
+                        if self.current_phase == "INGRESS":
+                            if my_g > nbr_g: # e.g. External(4) to Turnstile(3)
+                                flow_amount = int(zone.current_occupancy * 0.1)
+                        elif self.current_phase == "EGRESS":
+                            if my_g < nbr_g: # e.g. Seating(0) to Corridor(2)
+                                flow_amount = int(zone.current_occupancy * 0.15)
+                        elif self.current_phase == "MATCH":
+                            # Bidirectional milling between adjacent nodes
+                            # High occupancy naturally diffuses
+                            ratio_diff = (zone.current_occupancy / zone.max_capacity) - (neighbor_zone.current_occupancy / neighbor_zone.max_capacity)
+                            if ratio_diff > 0.1:
+                                flow_amount = int(zone.current_occupancy * 0.02)
                     
                     if flow_amount > 0:
                         if zone.mitigation_active:
