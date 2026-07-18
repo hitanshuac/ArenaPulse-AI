@@ -5,12 +5,61 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ArenaPulse-AI - Operations Cockpit</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Circuit Diagram CSS */
+        .node-card {
+            transition: all 0.3s ease;
+        }
+        .node-card.green { border-color: #10b981; box-shadow: 0 0 10px rgba(16, 185, 129, 0.2); }
+        .node-card.orange { border-color: #f59e0b; box-shadow: 0 0 15px rgba(245, 158, 11, 0.4); animation: pulse-orange 2s infinite; }
+        .node-card.red { border-color: #ef4444; box-shadow: 0 0 20px rgba(239, 68, 68, 0.6); animation: flash-red 1s infinite; }
+        .node-card.critical { border-color: #eab308; box-shadow: 0 0 25px rgba(234, 179, 8, 0.8); animation: flash-yellow 0.5s infinite; }
+
+        @keyframes pulse-orange {
+            0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(245, 158, 11, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+        }
+        @keyframes flash-red {
+            0%, 100% { background-color: rgba(239, 68, 68, 0.1); border-color: #ef4444; }
+            50% { background-color: rgba(239, 68, 68, 0.4); border-color: #f87171; }
+        }
+        @keyframes flash-yellow {
+            0%, 100% { background-color: rgba(234, 179, 8, 0.1); border-color: #eab308; }
+            50% { background-color: rgba(234, 179, 8, 0.5); border-color: #fde047; }
+        }
+
+        /* SVG Flow Lines */
+        svg.circuit-lines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .flow-line {
+            stroke: #334155;
+            stroke-width: 3;
+            fill: none;
+            stroke-dasharray: 6;
+            animation: flow 1s linear infinite;
+        }
+        .flow-line.congested {
+            stroke: #ef4444;
+            animation: flow 3s linear infinite; /* slower flow */
+        }
+        @keyframes flow {
+            from { stroke-dashoffset: 12; }
+            to { stroke-dashoffset: 0; }
+        }
+    </style>
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col font-sans">
 
     <!-- Header navigation -->
-    <header class="border-b border-slate-800 bg-slate-950 p-4" role="banner">
+    <header class="border-b border-slate-800 bg-slate-950 p-4 relative z-10" role="banner">
         <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
             <div class="flex items-center gap-3">
                 <span class="p-2 bg-blue-600 rounded-lg text-white font-black text-lg tracking-tighter">AP</span>
@@ -26,68 +75,49 @@
         </div>
     </header>
 
-    <main class="flex-grow max-w-7xl mx-auto p-4 w-full flex flex-col gap-6" role="main">
-        <!-- 3-Column Triage Pipeline -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+    <main class="flex-grow w-full flex flex-col gap-4 p-4 relative z-10" role="main">
+        
+        <!-- TOP SECTION: Circuit Diagram -->
+        <section class="bg-slate-950 rounded-xl border border-blue-900/30 shadow-lg p-6 relative w-full overflow-hidden">
+            <h2 class="text-lg font-semibold text-slate-200 mb-2">Stadium Crowd Flow Circuit Diagram</h2>
+            <p class="text-xs text-slate-400 mb-6">Real-time DAG topology displaying 15 physical zones. Nodes flash orange (70-90%) or red (>90%) on threshold breaches. Action items populate automatically.</p>
             
-            <!-- Column 1: Step 1 - Global Monitoring -->
-            <section class="flex flex-col gap-4" aria-labelledby="step-1-monitoring">
-                <div class="bg-slate-950 p-4 rounded-xl border border-blue-900/30 shadow-lg relative overflow-hidden">
-                    <div class="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
-                    <h3 class="text-[10px] font-bold text-blue-500 uppercase tracking-widest mb-1 ml-2">Step 1</h3>
-                    <h2 id="step-1-monitoring" class="text-lg font-semibold text-slate-200 mb-4 ml-2">Global Monitoring</h2>
-                    
-                    <!-- Chart Panel -->
-                    <div class="mb-4">
-                        <div class="flex justify-between items-center mb-2 relative group" tabindex="0" aria-label="This chart visualizes the real-time sum of the velocity (fans per minute) across all active stadium zones. It tracks data over a rolling 5-minute historical window.">
-                            <div class="flex items-center gap-2">
-                                <h3 class="text-xs font-semibold text-slate-300">Live Telemetry Trends</h3>
-                                <span class="text-[9px] cursor-help rounded-full border border-slate-600 w-3.5 h-3.5 flex items-center justify-center text-slate-400 bg-slate-900 hover:bg-slate-700" aria-hidden="true">?</span>
-                            </div>
-                            <!-- Tooltip popup -->
-                            <div class="absolute top-full left-0 mt-2 hidden group-hover:block group-focus:block w-64 p-3 bg-slate-800 text-slate-200 text-xs rounded shadow-xl z-20 border border-slate-700 leading-relaxed">
-                                <strong>Velocity Aggregate:</strong> This chart visualizes the real-time sum of the inflow rate (fans per minute) across all active stadium zones, displaying a rolling 5-minute historical window.
-                            </div>
-                        </div>
-                        
-                        <!-- Chart Area -->
-                        <div class="h-40 w-full bg-slate-900/80 p-2 rounded border border-slate-800">
-                            <canvas id="telemetryChart"></canvas>
-                        </div>
-                    </div>
+            <div class="relative w-full overflow-x-auto pb-4">
+                <div id="circuitBoard" class="relative min-w-[1000px] h-[700px] bg-slate-900/50 rounded-lg border border-slate-800 flex items-center justify-center">
+                    <!-- SVG Lines (Rendered via JS) -->
+                    <svg id="svgLines" class="circuit-lines"></svg>
+                    <!-- Nodes container (Rendered via JS) -->
+                    <div id="nodesContainer" class="absolute w-full h-full"></div>
+                </div>
+            </div>
+        </section>
 
-                    <!-- Data Ingestion & Quota Telemetry Panel -->
-                    <div>
-                        <div class="flex justify-between items-center mb-2">
-                            <h3 class="text-xs font-semibold text-slate-300">System Telemetry & Ingestion</h3>
-                        </div>
-                        <div class="grid grid-cols-2 gap-2 text-xs mb-3">
-                            <div class="bg-slate-900 p-2 rounded border border-slate-800 relative group" tabindex="0" aria-label="API Quota allows only 15 LLM requests per day. This metric tracks your current usage to prevent quota exhaustion.">
-                                <div class="flex items-center gap-1.5 mb-1">
-                                    <div class="text-slate-500 font-semibold text-[10px] uppercase">API Quota</div>
-                                    <span class="text-[9px] cursor-help rounded-full border border-slate-600 w-3.5 h-3.5 flex items-center justify-center text-slate-500 bg-slate-950" aria-hidden="true">?</span>
-                                </div>
+        <!-- BOTTOM SECTION: 2 Columns -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+            
+            <!-- Column 1: System Ingestion & Translation -->
+            <div class="flex flex-col gap-6">
+                
+                <!-- System Telemetry (Collapsible) -->
+                <details class="bg-slate-950 rounded-xl border border-slate-800 shadow-lg group">
+                    <summary class="p-4 cursor-pointer font-semibold text-slate-300 text-sm flex justify-between items-center outline-none focus:ring-1 focus:ring-slate-700 rounded-xl">
+                        System Telemetry & Ingestion
+                        <span class="text-slate-500 transition-transform group-open:rotate-180">▼</span>
+                    </summary>
+                    <div class="p-4 border-t border-slate-800">
+                        <div class="grid grid-cols-2 gap-4 text-xs mb-4">
+                            <div class="bg-slate-900 p-3 rounded border border-slate-800">
+                                <div class="text-slate-500 font-semibold text-[10px] uppercase mb-1">API Quota (LLM)</div>
                                 <div class="font-mono text-sm" id="quotaDisplay">--/15 calls</div>
-                                <!-- Tooltip popup -->
-                                <div class="absolute bottom-full left-0 mb-2 hidden group-hover:block group-focus:block w-48 p-2 bg-slate-800 text-slate-200 text-[10px] rounded shadow-xl z-10 border border-slate-700 leading-tight">
-                                    <strong>15 Requests Per Day:</strong> Tracks daily usage of the Gemini API to prevent exhaustion. The system aggressively caches data to conserve these limits.
-                                </div>
                             </div>
-                            <div class="bg-slate-900 p-2 rounded border border-slate-800 relative group" tabindex="0" aria-label="LLM Cache Hit Pool displays the number of AI decisions saved in memory. When the same stadium state occurs, the system reuses these decisions instead of calling the API, costing zero quota.">
-                                <div class="flex items-center gap-1.5 mb-1">
-                                    <div class="text-slate-500 font-semibold text-[10px] uppercase">Cache Pool</div>
-                                    <span class="text-[9px] cursor-help rounded-full border border-slate-600 w-3.5 h-3.5 flex items-center justify-center text-slate-500 bg-slate-950" aria-hidden="true">?</span>
-                                </div>
+                            <div class="bg-slate-900 p-3 rounded border border-slate-800">
+                                <div class="text-slate-500 font-semibold text-[10px] uppercase mb-1">Cache Pool</div>
                                 <div class="font-mono text-sm text-emerald-400" id="cacheDisplay">-- items</div>
-                                <!-- Tooltip popup -->
-                                <div class="absolute bottom-full right-0 mb-2 hidden group-hover:block group-focus:block w-48 p-2 bg-slate-800 text-slate-200 text-[10px] rounded shadow-xl z-10 border border-slate-700 leading-tight">
-                                    <strong>Memoization Pool:</strong> Number of AI decisions securely saved in memory. Reusing known states costs 0 API tokens and executes instantly.
-                                </div>
                             </div>
                         </div>
-                        <div class="overflow-x-auto border border-slate-800 rounded bg-slate-900">
+                        <div class="max-h-48 overflow-y-auto border border-slate-800 rounded bg-slate-900">
                             <table class="w-full text-left text-[10px] text-slate-400">
-                                <thead class="bg-slate-950 border-b border-slate-800 uppercase">
+                                <thead class="bg-slate-950 border-b border-slate-800 uppercase sticky top-0">
                                     <tr>
                                         <th class="px-2 py-1.5 font-semibold">Zone_ID</th>
                                         <th class="px-2 py-1.5 font-semibold">DType</th>
@@ -100,95 +130,59 @@
                             </table>
                         </div>
                     </div>
+                </details>
+
+                <!-- Translation Desk -->
+                <div class="bg-slate-950 p-4 rounded-xl border border-emerald-900/30 shadow-lg">
+                    <h3 class="text-sm font-semibold text-emerald-400 mb-1">Field Translation Desk</h3>
+                    <p class="text-[10px] text-slate-400 leading-tight mb-3">Translate distress reports or local queries from visiting fans to identify medical alarms (0 tokens).</p>
+                    <form onsubmit="submitTranslationQuery(event)" class="flex flex-col gap-2">
+                        <textarea id="fanInput" placeholder="e.g. 'Tengo un dolor de pecho...'" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs focus:outline-none focus:border-emerald-500 text-slate-200" rows="2" required></textarea>
+                        <button type="submit" class="w-full py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded shadow transition-colors">Translate & Classify</button>
+                    </form>
+                    <div id="translateResult" class="mt-3 p-3 bg-slate-900 rounded border border-slate-800 hidden text-[10px]"></div>
                 </div>
-            </section>
 
-            <!-- Column 2: Step 2 - Threat Detection -->
-            <section class="flex flex-col gap-4" aria-labelledby="step-2-detection">
-                <div class="bg-slate-950 p-4 rounded-xl border border-amber-900/30 shadow-lg relative overflow-hidden h-full">
-                    <div class="absolute top-0 left-0 w-1 h-full bg-amber-500"></div>
-                    <h3 class="text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-1 ml-2">Step 2</h3>
-                    <div class="flex items-center gap-2 mb-4 ml-2 relative group" tabindex="0" aria-label="Live breakdown of individual stadium zones. Displays current occupancy versus maximum safe capacity, and tracks the inflow velocity of fans per minute.">
-                        <h2 id="step-2-detection" class="text-lg font-semibold text-slate-200">Threat Detection</h2>
-                        <span class="text-[10px] cursor-help rounded-full border border-slate-600 w-4 h-4 flex items-center justify-center text-slate-400 bg-slate-900 hover:bg-slate-700" aria-hidden="true">?</span>
-                        <!-- Tooltip popup -->
-                        <div class="absolute top-full left-0 mt-2 hidden group-hover:block group-focus:block w-64 p-3 bg-slate-800 text-slate-200 text-xs rounded shadow-xl z-20 border border-slate-700 leading-relaxed">
-                            <strong>Zone Breakdown:</strong> Live visualization of individual zones. Displays current occupancy versus maximum safe capacity, and tracks inflow velocity. Red flashes indicate a surge threshold breach.
-                        </div>
+            </div>
+
+            <!-- Column 2: Agentic Escalation -->
+            <div class="bg-slate-950 p-4 rounded-xl border border-rose-900/30 shadow-lg flex flex-col h-full">
+                <div class="flex justify-between items-start mb-4">
+                    <div>
+                        <h2 class="text-lg font-semibold text-slate-200">Agentic Escalation</h2>
+                        <p class="text-[10px] text-slate-500 mt-1">Split-Plane Architecture: Deterministic Rule Engine + LLM</p>
                     </div>
-                    
-                    <div class="space-y-3" id="zoneContainer" aria-live="polite">
-                        <!-- Loaded dynamically -->
-                    </div>
-                </div>
-            </section>
-
-            <!-- Column 3: Step 3 - Agentic Escalation -->
-            <section class="flex flex-col gap-4" aria-labelledby="step-3-escalation">
-                <div class="bg-slate-950 p-4 rounded-xl border border-rose-900/30 shadow-lg relative overflow-hidden">
-                    <div class="absolute top-0 left-0 w-1 h-full bg-rose-500"></div>
-                    <h3 class="text-[10px] font-bold text-rose-500 uppercase tracking-widest mb-1 ml-2">Step 3</h3>
-                    <h2 id="step-3-escalation" class="text-lg font-semibold text-slate-200 mb-4 ml-2">Agentic Escalation</h2>
-                    
-                    <!-- Agent Workflow Dashboard -->
-                    <div class="mb-6 flex flex-col gap-3">
-                        <div class="flex justify-between items-start">
-                            <div class="relative group" tabindex="0" aria-label="Deterministic Math Router analyzes telemetry for free. LLM only fires for multi-node spatial analysis when Commander requests it.">
-                                <div class="flex items-center gap-2">
-                                    <h3 class="text-sm font-semibold text-slate-300">Workflow Engine</h3>
-                                    <span class="text-[10px] cursor-help rounded-full border border-slate-600 w-3.5 h-3.5 flex items-center justify-center text-slate-400 bg-slate-900 hover:bg-slate-700" aria-hidden="true">?</span>
-                                </div>
-                                <p class="text-[10px] text-slate-500 mt-1">Split-Plane: Deterministic + LLM</p>
-                                <!-- Tooltip popup -->
-                                <div class="absolute top-full left-0 mt-2 hidden group-hover:block group-focus:block w-56 p-3 bg-slate-800 text-slate-200 text-xs rounded shadow-xl z-20 border border-slate-700 leading-relaxed">
-                                    <strong>Split-Plane Architecture:</strong> "Run Diagnostics" is free (0 tokens). "Analyze Anomalies" fires the LLM for multi-node flow redistribution decisions.
-                                </div>
-                            </div>
-                            <div class="flex flex-col items-end gap-2">
-                                <button onclick="runAgentWorkflow()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded shadow transition-colors focus:ring focus:ring-blue-500 focus:outline-none" aria-label="Run Diagnostics (Free, 0 tokens)">
-                                    Run Diagnostics
-                                </button>
-                                <button id="analyzeBtn" onclick="analyzeAnomalies()" class="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs rounded shadow transition-colors focus:ring focus:ring-amber-500 focus:outline-none hidden" aria-label="Analyze Anomalies (Uses 1 LLM call)">
-                                    ⚡ Analyze Anomalies <span id="anomalyBadge" class="ml-1 bg-rose-500 text-white rounded-full px-1.5 py-0.5 text-[9px] font-bold">0</span>
-                                </button>
-                            </div>
-                        </div>
-
-                        <div id="agentSummary" aria-live="polite" class="text-xs text-slate-400 bg-slate-900 p-2.5 rounded border border-slate-800">
-                            <strong>Status:</strong> Idle.
-                        </div>
-
-                        <div id="agentTraceLog" aria-live="assertive" class="p-3 bg-black rounded-lg font-mono text-[10px] space-y-1.5 border border-slate-800 max-h-40 overflow-y-auto shadow-inner">
-                            <p class="text-slate-600">// Agent trace pipeline initialized.</p>
-                        </div>
-                    </div>
-
-                    <hr class="border-slate-800 mb-6">
-
-                    <!-- Translation Desk -->
-                    <div class="flex flex-col gap-3">
-                        <h3 class="text-sm font-semibold text-emerald-400">Field Translation Desk</h3>
-                        <p class="text-[10px] text-slate-400 leading-tight">Translate distress reports or local queries from visiting fans to identify medical alarms.</p>
-                        
-                        <form onsubmit="submitTranslationQuery(event)" class="flex flex-col gap-2">
-                            <textarea id="fanInput" placeholder="e.g. 'Tengo un dolor de pecho...'" class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs focus:outline-none focus:border-emerald-500 text-slate-200" rows="2" required></textarea>
-                            <button type="submit" class="w-full py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded shadow transition-colors">Classify Ticket</button>
-                        </form>
-
-                        <div id="translateResult" class="p-3 bg-slate-900 rounded border border-slate-800 hidden text-[10px]">
-                            <!-- Translate returns here -->
-                        </div>
+                    <div class="flex flex-col items-end gap-2">
+                        <button onclick="runAgentWorkflow()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded shadow transition-colors focus:outline-none" aria-label="Run Diagnostics (Free, 0 tokens)">
+                            Run Diagnostics
+                        </button>
+                        <button id="analyzeBtn" onclick="analyzeAnomalies()" class="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs rounded shadow transition-colors focus:outline-none hidden" aria-label="Analyze Anomalies (Uses 1 LLM call)">
+                            ⚡ Analyze Anomalies <span id="anomalyBadge" class="ml-1 bg-rose-500 text-white rounded-full px-1.5 py-0.5 text-[9px] font-bold">0</span>
+                        </button>
                     </div>
                 </div>
-            </section>
+
+                <div id="agentSummary" aria-live="polite" class="text-xs text-slate-400 bg-slate-900 p-2.5 rounded border border-slate-800 mb-3">
+                    <strong>Status:</strong> Idle.
+                </div>
+
+                <!-- Removed max-height and overflow scroll to let it expand naturally -->
+                <div id="agentTraceLog" aria-live="assertive" class="p-3 bg-black rounded-lg font-mono text-[10px] space-y-1.5 border border-slate-800 shadow-inner flex-grow">
+                    <p class="text-slate-600">// Agent trace pipeline initialized.</p>
+                </div>
+            </div>
+
         </div>
 
-        <!-- Developer Sandbox Footer (Visually separated) -->
+        <!-- Developer Sandbox Footer -->
         <div class="mt-8 bg-slate-950 p-4 rounded border border-slate-800 border-dashed">
             <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-3">Developer Sandbox (Debug Controls)</h2>
             <div class="flex flex-wrap gap-4 items-center">
                 <button onclick="simulateRushHour()" class="py-1.5 px-3 bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 border border-rose-800/60 rounded text-xs transition-colors">
                     Simulate Gate Surge
+                </button>
+                <button onclick="triggerMedicalEmergency()" class="py-1.5 px-3 bg-yellow-600/20 hover:bg-yellow-600/30 text-yellow-300 border border-yellow-800/60 rounded text-xs transition-colors">
+                    Simulate Medical Emergency
                 </button>
                 <button onclick="resetSimulation()" class="py-1.5 px-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs transition-colors">
                     Reset Telemetry
@@ -207,41 +201,149 @@
     </footer>
 
     <script>
-        const zoneContainer = document.getElementById('zoneContainer');
-        const csvFile = document.getElementById('csvFile');
-        let chart;
-        let timeSeriesData = { labels: [], datasets: [{ label: 'Gate Inflow Rate (Fans/Min)', data: [], borderColor: '#3b82f6', tension: 0.3 }] };
+        // Store zone data globally for rendering
+        let globalZones = [];
+        let globalAnomalies = [];
 
-        // Setup time-series chart
-        function initChart() {
-            const ctx = document.getElementById('telemetryChart').getContext('2d');
-            chart = new Chart(ctx, {
-                type: 'line',
-                data: timeSeriesData,
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8', font: { size: 9 } } },
-                        y: { grid: { color: '#1e293b' }, ticks: { color: '#94a3b8', font: { size: 9 } } }
-                    },
-                    plugins: { legend: { display: false } }
+        // Manual coordinate mapping for the 15-node topology (Percentages of container 1000x700)
+        // Adjust these to create a visually pleasing circuit layout
+        const layoutCoords = {
+            "Parking A": { x: 20, y: 10 },
+            "Parking B": { x: 80, y: 10 },
+            "North Plaza": { x: 20, y: 25 },
+            "South Plaza": { x: 80, y: 25 },
+            "Gate A": { x: 10, y: 40 },
+            "Gate B": { x: 30, y: 40 },
+            "Gate C": { x: 70, y: 40 },
+            "Gate D": { x: 90, y: 40 },
+            "North Concourse": { x: 15, y: 60 },
+            "Main Concourse": { x: 50, y: 60 },
+            "South Concourse": { x: 85, y: 60 },
+            "Food Court": { x: 30, y: 75 },
+            "Medical Bay": { x: 50, y: 75 },
+            "Restroom Zone": { x: 70, y: 75 },
+            "Bowl NW": { x: 15, y: 90 },
+            "Bowl NE": { x: 40, y: 90 },
+            "Bowl SW": { x: 85, y: 90 },
+            "Bowl SE": { x: 60, y: 90 }
+        };
+
+        // Render the Circuit Diagram
+        function renderCircuitDiagram(zones) {
+            globalZones = zones;
+            const container = document.getElementById('nodesContainer');
+            const svg = document.getElementById('svgLines');
+            
+            // Build Nodes HTML
+            let nodesHTML = '';
+            zones.forEach(zone => {
+                const coords = layoutCoords[zone.zone_id];
+                if (!coords) return; // Skip if not mapped
+
+                const capacityRatio = zone.max_capacity > 0 ? (zone.current_occupancy / zone.max_capacity) : 0;
+                const percentage = Math.round(capacityRatio * 100);
+                
+                let colorClass = 'green';
+                let flashClass = '';
+                if (zone.mitigation_active && zone.mitigation_active.includes("MEDICAL")) {
+                    colorClass = 'critical';
+                } else if (percentage >= 90) {
+                    colorClass = 'red';
+                } else if (percentage >= 70) {
+                    colorClass = 'orange';
+                }
+
+                // Node Shape based on type
+                let shapeClasses = 'rounded-lg';
+                if (zone.node_type === 'external') shapeClasses = 'rounded-sm';
+                if (zone.node_type === 'turnstile') shapeClasses = 'rounded-full';
+                if (zone.node_type === 'amenity') shapeClasses = 'rounded-[20px]'; // almost oval
+
+                // TODO list HTML
+                let todoHTML = '';
+                if (zone.todo_list && zone.todo_list.length > 0) {
+                    todoHTML = `<div class="mt-2 pt-2 border-t border-slate-700">
+                                    <ul class="text-[8px] list-disc pl-3 text-left space-y-0.5 text-slate-300">
+                                        ${zone.todo_list.map(t => `<li>${t}</li>`).join('')}
+                                    </ul>
+                                </div>`;
+                }
+
+                nodesHTML += `
+                    <div id="node-${zone.zone_id.replace(/\s+/g, '-')}" class="absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-10" style="left: ${coords.x}%; top: ${coords.y}%;">
+                        <div class="node-card ${colorClass} ${shapeClasses} bg-slate-950 border-2 p-2 min-w-[120px] text-center shadow-lg relative group cursor-pointer">
+                            <h4 class="text-[9px] font-bold text-slate-200 uppercase tracking-wider mb-1">${zone.zone_id}</h4>
+                            <div class="text-xs font-mono font-semibold ${percentage >= 90 ? 'text-rose-400' : (percentage >= 70 ? 'text-amber-400' : 'text-emerald-400')}">
+                                ${zone.current_occupancy.toLocaleString()} / ${zone.max_capacity.toLocaleString()}
+                            </div>
+                            <div class="text-[8px] text-slate-400 mt-0.5">${percentage}% | Flow: ${zone.velocity} /min</div>
+                            
+                            <!-- Expandable TODO list -->
+                            ${todoHTML}
+
+                            <!-- Mitigation Badge -->
+                            ${zone.mitigation_active ? `<div class="absolute -top-2 -right-2 bg-blue-600 text-white text-[8px] px-1.5 py-0.5 rounded shadow-lg z-20 whitespace-nowrap overflow-hidden text-ellipsis max-w-[150px]" title="${zone.mitigation_active}">${zone.mitigation_active}</div>` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = nodesHTML;
+
+            // Build Flow Lines SVG
+            // Needs to happen slightly after render so elements exist for bounds calculation
+            setTimeout(() => drawLines(zones), 50);
+        }
+
+        function drawLines(zones) {
+            const svg = document.getElementById('svgLines');
+            const containerRect = document.getElementById('circuitBoard').getBoundingClientRect();
+            
+            let linesHTML = '';
+            zones.forEach(zone => {
+                if (zone.downstream_nodes && zone.downstream_nodes.length > 0) {
+                    const startCoords = layoutCoords[zone.zone_id];
+                    if (!startCoords) return;
+
+                    zone.downstream_nodes.forEach(targetId => {
+                        const endCoords = layoutCoords[targetId];
+                        if (!endCoords) return;
+
+                        // Calculate pixel positions based on percentages
+                        const startX = (startCoords.x / 100) * containerRect.width;
+                        const startY = (startCoords.y / 100) * containerRect.height;
+                        const endX = (endCoords.x / 100) * containerRect.width;
+                        const endY = (endCoords.y / 100) * containerRect.height;
+
+                        const capacityRatio = zone.max_capacity > 0 ? (zone.current_occupancy / zone.max_capacity) : 0;
+                        const lineClass = capacityRatio >= 0.8 ? 'congested' : '';
+
+                        // Draw curved path or direct line
+                        // Let's use a simple bezier curve for aesthetics
+                        const cpY = startY + (endY - startY) / 2;
+                        
+                        linesHTML += `
+                            <path class="flow-line ${lineClass}" d="M ${startX} ${startY} C ${startX} ${cpY}, ${endX} ${cpY}, ${endX} ${endY}" />
+                        `;
+                    });
                 }
             });
+            svg.innerHTML = linesHTML;
         }
 
-        function initSSE() {
-            const evtSource = new EventSource('/api/stadium/stream');
-            evtSource.onmessage = function(event) {
-                const payload = JSON.parse(event.data);
-                renderZones(payload.zones);
-                updateChartWithLatestOccupancy(payload.zones);
-                renderSystemTelemetry(payload);
-            };
-            evtSource.onerror = function(err) {
-                console.error("Telemetry connection lost:", err);
-            };
-        }
+        // Initialize SSE Connection
+        const eventSource = new EventSource("/api/stadium/stream");
+        
+        eventSource.onmessage = function(event) {
+            const payload = JSON.parse(event.data);
+            renderSystemTelemetry(payload);
+            renderCircuitDiagram(payload.zones);
+        };
+
+        eventSource.onerror = function(err) {
+            console.error("SSE Connection Error:", err);
+            document.getElementById('simulator-status').innerText = "Telemetry Disconnected";
+            document.getElementById('simulator-status').className = "text-xs text-rose-500 font-bold";
+        };
 
         function renderSystemTelemetry(payload) {
             // Update Quota and Cache
@@ -282,168 +384,10 @@
             });
         }
 
-        function renderZones(zones) {
-            zoneContainer.innerHTML = '';
-            
-            // Helper to render a node
-            const renderNode = (z) => {
-                if (!z.zone_id) return '';
-                const ratio = z.current_occupancy / z.max_capacity;
-                const percentage = (ratio * 100).toFixed(1);
-                let colorClass = 'border-emerald-500/50 bg-emerald-900/10 text-emerald-400';
-                let barClass = 'bg-emerald-500';
-                let shadowClass = '';
-                
-                if (percentage >= 80) {
-                    colorClass = 'border-rose-500 bg-rose-950 text-rose-400 font-bold';
-                    barClass = 'bg-rose-500 animate-pulse';
-                    shadowClass = 'shadow-[0_0_15px_rgba(225,29,72,0.3)]';
-                } else if (percentage >= 60) {
-                    colorClass = 'border-amber-500/50 bg-amber-900/20 text-amber-400';
-                    barClass = 'bg-amber-500';
-                }
-
-                const mitigationHtml = z.mitigation_active ? 
-                    `<div class="absolute -top-3 -right-2 bg-blue-600 text-white text-[8px] px-1.5 py-0.5 rounded flex items-center gap-1 shadow-lg border border-blue-400 z-30">
-                        <span>🚧</span> ${z.mitigation_active}
-                     </div>` : '';
-
-                return `
-                    <div class="relative p-2 rounded-lg border-2 ${colorClass} ${shadowClass} transition-all duration-300 w-full z-10 bg-slate-950">
-                        ${mitigationHtml}
-                        <div class="flex justify-between items-center mb-1">
-                            <span class="text-[9px] tracking-wider uppercase truncate pr-1 font-bold">${z.zone_id}</span>
-                            <span class="text-[9px] font-mono bg-black/50 px-1 rounded">${z.current_occupancy}/${z.max_capacity}</span>
-                        </div>
-                        <div class="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden border border-slate-800">
-                            <div class="h-full ${barClass}" style="width: ${percentage}%"></div>
-                        </div>
-                        <div class="text-[8px] text-right mt-1 font-mono opacity-80 uppercase tracking-tighter">
-                            ${percentage}% | ${z.velocity > 0 ? '+' : ''}${z.velocity}/m
-                        </div>
-                    </div>
-                `;
-            };
-
-            const getZone = (id) => zones.find(z => z.zone_id === id) || {};
-
-            zoneContainer.innerHTML = `
-                <div class="flex flex-col items-center w-full gap-0 pt-2 pb-2">
-                    <!-- Row 1: Root -->
-                    <div class="w-2/3 relative flex justify-center">
-                        ${renderNode(getZone('Main Concourse'))}
-                        <!-- Connection Line Down -->
-                        <div class="absolute top-full left-1/2 w-px h-6 bg-slate-700 -translate-x-1/2 z-0"></div>
-                    </div>
-                    
-                    <!-- Row 2: Corridors -->
-                    <div class="flex w-full mt-6 justify-between relative gap-4">
-                        <!-- Horizontal connector -->
-                        <div class="absolute top-[-24px] left-1/4 right-1/4 h-6 border-l border-r border-t border-slate-700 z-0"></div>
-                        
-                        <div class="w-1/2 flex flex-col items-center relative">
-                            ${renderNode(getZone('North Corridor'))}
-                            <div class="absolute top-full left-1/2 w-px h-6 bg-slate-700 -translate-x-1/2 z-0"></div>
-                        </div>
-                        <div class="w-1/2 flex flex-col items-center relative">
-                            ${renderNode(getZone('East Corridor'))}
-                            <div class="absolute top-full left-1/2 w-px h-6 bg-slate-700 -translate-x-1/2 z-0"></div>
-                        </div>
-                    </div>
-
-                    <!-- Row 3: Gates -->
-                    <div class="flex w-full mt-6 justify-between gap-4">
-                        <div class="w-1/2 flex flex-col items-center">
-                            ${renderNode(getZone('North Gate'))}
-                        </div>
-                        <div class="w-1/2 flex flex-col items-center">
-                            ${renderNode(getZone('East Gate'))}
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function updateChartWithLatestOccupancy(zones) {
-            const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-            
-            // Use real velocity data generated by the backend IoT simulation loop
-            const totalInflow = zones.reduce((sum, z) => sum + (z.velocity || 0), 0);
-            
-            if (timeSeriesData.labels.length > 150) {
-                timeSeriesData.labels.shift();
-                timeSeriesData.datasets[0].data.shift();
-            }
-            
-            timeSeriesData.labels.push(now);
-            timeSeriesData.datasets[0].data.push(Math.round(totalInflow));
-            chart.update();
-        }
-
-        // JS Simulation loop removed - IoT generation now handled natively by Python backend via SSE
-        async function simulateRushHour() {
-            try {
-                const res = await fetch('/api/stadium');
-                const zones = await res.json();
-                for (const zone of zones) {
-                    if (zone.zone_id === "East Gate") {
-                        // Spike East Gate past 80% to force the agent to trigger alerts
-                        const fd = new FormData();
-                        fd.append('zone_id', zone.zone_id);
-                        fd.append('current_occupancy', Math.floor(zone.max_capacity * 0.88));
-                        await fetch('/api/update-telemetry', { method: 'POST', body: fd });
-                    }
-                }
-                runAgentWorkflow();
-            } catch (e) {
-                console.error(e);
-            }
-        }
-
-        async function resetSimulation() {
-            try {
-                const fd = new FormData();
-                fd.append('zone_id', 'East Gate');
-                fd.append('current_occupancy', 5100);
-                await fetch('/api/update-telemetry', { method: 'POST', body: fd });
-                
-                // Clear active mitigations
-                const res = await fetch('/api/stadium');
-                const zones = await res.json();
-                for (const zone of zones) {
-                     if (zone.mitigation_active) {
-                         // Reset mitigations via a bulk update or endpoint... 
-                         // To keep it simple without adding a new endpoint, just upload the default state using /upload-csv
-                     }
-                }
-                
-                const traceLog = document.getElementById('agentTraceLog');
-                traceLog.innerHTML = '<p class="text-slate-600">// System state reset. Agent trace cleared.</p>';
-                document.getElementById('agentSummary').innerHTML = '<strong>Status:</strong> Simulation metrics reset to baseline values.';
-            } catch (e) {
-                console.error(e);
-            }
-        }
-
-        // CSV Upload Handler
-        csvFile.addEventListener('change', async (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            const formData = new FormData();
-            formData.append('file', file);
-
-            try {
-                const res = await fetch('/api/upload-csv', { method: 'POST', body: formData });
-                if (res.ok) {
-                    alert('Configuration dataset uploaded successfully.');
-                    runAgentWorkflow();
-                } else {
-                    const err = await res.json();
-                    alert(`Upload failure: ${err.detail}`);
-                }
-            } catch (err) {
-                alert('Connection failure parsing telemetry CSV.');
+        // Window resize handler for SVG redraw
+        window.addEventListener('resize', () => {
+            if (globalZones.length > 0) {
+                drawLines(globalZones);
             }
         });
 
@@ -465,9 +409,9 @@
                 if (d.execution_trace && d.execution_trace.length > 0) {
                     d.execution_trace.forEach(trace => {
                         let textClass = 'text-slate-300';
-                        if (trace.includes('[Escalation]')) textClass = 'text-rose-400 font-bold';
-                        else if (trace.includes('[Math Router]')) textClass = 'text-amber-400';
-                        else if (trace.includes('[Dispatched]')) textClass = 'text-emerald-400';
+                        if (trace.includes('🔴 RED')) textClass = 'text-rose-400 font-bold';
+                        else if (trace.includes('🟠 ORANGE')) textClass = 'text-amber-500 font-bold';
+                        else if (trace.includes('[Math Router]')) textClass = 'text-amber-300';
                         else if (trace.includes('[Anomaly Queue]')) textClass = 'text-cyan-400 font-bold';
                         else if (trace.includes('FLOW_MISMATCH')) textClass = 'text-amber-300';
                         
@@ -503,7 +447,7 @@
                         if (trace.includes('FLOW_MISMATCH') || trace.includes('CASCADE_RISK')) textClass = 'text-amber-400 font-bold';
                         else if (trace.includes('MEDICAL_ROUTING')) textClass = 'text-rose-400 font-bold';
                         else if (trace.includes('Reduce flow')) textClass = 'text-cyan-300';
-                        else if (trace.includes('[L2 GATE SUMMARY]')) textClass = 'text-emerald-400';
+                        else if (trace.includes('[L2 GATE SUMMARY]')) textClass = 'text-emerald-400 font-bold';
                         
                         traceLog.innerHTML += `<div class="${textClass} border-l-2 pl-2 border-slate-800 py-0.5 mb-1">${trace}</div>`;
                     });
@@ -511,7 +455,7 @@
 
                 if (d.alerts && d.alerts.length > 0) {
                     d.alerts.forEach(alert => {
-                        traceLog.innerHTML += `<div class="text-rose-500 border-l-2 pl-2 border-rose-800 py-0.5 mb-1">${alert}</div>`;
+                        traceLog.innerHTML += `<div class="text-rose-500 border-l-2 pl-2 border-rose-800 py-0.5 mb-1 bg-rose-950/30">${alert}</div>`;
                     });
                 }
             } catch (err) {
@@ -520,7 +464,7 @@
             }
         }
 
-        // Submit Translation form
+        // Translation endpoint using free Google Translate
         async function submitTranslationQuery(e) {
             e.preventDefault();
             const query = document.getElementById('fanInput').value;
@@ -535,38 +479,96 @@
                 const res = await fetch('/api/translate', { method: 'POST', body: formData });
                 const d = await res.json();
 
-                let alertColor = 'text-emerald-400';
-                let borderTheme = 'border-slate-800';
                 if (d.urgency_level === 'CRITICAL') {
-                    alertColor = 'text-rose-400 font-black animate-pulse';
-                    borderTheme = 'border-rose-800 bg-rose-950/10';
+                    resultBox.innerHTML = `
+                        <div class="text-rose-500 font-bold mb-1">${d.urgency_level} - ${d.detected_intent}</div>
+                        <div class="text-slate-300 mb-2">${d.translated_response_en}</div>
+                        <div class="text-slate-400 border-t border-slate-700 pt-1">${d.translated_response_es}</div>
+                        <div class="mt-2 text-yellow-400 animate-pulse text-center font-bold">⚠️ Anomaly Auto-Queued for Analysis</div>
+                    `;
+                } else {
+                    resultBox.innerHTML = `
+                        <div class="text-emerald-500 font-bold mb-1">${d.urgency_level} - ${d.detected_intent}</div>
+                        <div class="text-slate-300 mb-2">${d.translated_response_en}</div>
+                        <div class="text-slate-400 border-t border-slate-700 pt-1">${d.translated_response_es}</div>
+                    `;
                 }
-
-                resultBox.className = `p-4 rounded border ${borderTheme} text-xs`;
-                resultBox.innerHTML = `
-                    <div class="flex justify-between items-center mb-3">
-                        <span class="text-slate-400 font-bold">Detected Intent: ${d.detected_intent}</span>
-                        <span class="uppercase tracking-wider ${alertColor}">${d.urgency_level} Priority</span>
-                    </div>
-                    <div class="space-y-3">
-                        <div class="p-2 bg-slate-950 rounded border border-slate-800">
-                            <strong class="block text-[10px] text-slate-500 mb-1">Volunteer Response Guidance (EN):</strong>
-                            <p class="text-slate-200">${d.translated_response_en}</p>
-                        </div>
-                        <div class="p-2 bg-slate-950 rounded border border-slate-800">
-                            <strong class="block text-[10px] text-slate-500 mb-1">Guía de Respuesta en Español (ES):</strong>
-                            <p class="text-slate-200">${d.translated_response_es}</p>
-                        </div>
-                    </div>
-                `;
             } catch (err) {
-                resultBox.innerHTML = '<p class="text-rose-500">[ERROR] Translation request timed out.</p>';
+                resultBox.innerHTML = '<p class="text-rose-500">[ERROR] Translation service unreachable.</p>';
             }
         }
 
-        // Run setup
-        initChart();
-        initSSE();
+        // Debug controls
+        async function simulateRushHour() {
+            try {
+                const res = await fetch('/api/stadium');
+                const zones = await res.json();
+                for (const zone of zones) {
+                    // Push Turnstiles to red
+                    if (zone.node_type === 'turnstile') {
+                        const fd = new FormData();
+                        fd.append('zone_id', zone.zone_id);
+                        fd.append('current_occupancy', Math.floor(zone.max_capacity * 0.95));
+                        await fetch('/api/update-telemetry', { method: 'POST', body: fd });
+                    }
+                    // Push a concourse to orange
+                    if (zone.zone_id === 'Main Concourse') {
+                        const fd = new FormData();
+                        fd.append('zone_id', zone.zone_id);
+                        fd.append('current_occupancy', Math.floor(zone.max_capacity * 0.85));
+                        await fetch('/api/update-telemetry', { method: 'POST', body: fd });
+                    }
+                }
+                runAgentWorkflow();
+            } catch (e) {
+                console.error(e);
+            }
+        }
+        
+        async function triggerMedicalEmergency() {
+            const fd = new FormData();
+            fd.append('query', "emergencia necesito un medico rapido en bowl NE");
+            await fetch('/api/translate', { method: 'POST', body: fd });
+        }
+
+        async function resetSimulation() {
+            try {
+                const res = await fetch('/api/stadium');
+                const zones = await res.json();
+                for (const zone of zones) {
+                    const fd = new FormData();
+                    fd.append('zone_id', zone.zone_id);
+                    fd.append('current_occupancy', Math.floor(zone.max_capacity * 0.3)); // 30% baseline
+                    await fetch('/api/update-telemetry', { method: 'POST', body: fd });
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        // CSV Upload Handler
+        const csvFile = document.getElementById('csvFile');
+        csvFile.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const res = await fetch('/api/upload-csv', { method: 'POST', body: formData });
+                if (res.ok) {
+                    alert('Configuration dataset uploaded successfully.');
+                    runAgentWorkflow();
+                } else {
+                    const err = await res.json();
+                    alert(`Upload failed: ${err.detail}`);
+                }
+            } catch (error) {
+                alert('Connection error during upload.');
+            }
+        });
+
     </script>
 </body>
 </html>
