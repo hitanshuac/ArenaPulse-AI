@@ -75,6 +75,7 @@ async def upload_stadium_data(file: UploadFile = File(...)):
         for row in reader:
             temp_state.append({
                 "zone_id": row["zone_id"].strip(),
+                "node_type": "corridor", # default fallback
                 "current_occupancy": int(row["current_occupancy"].strip()),
                 "max_capacity": int(row["max_capacity"].strip()),
                 "associated_gates": row["associated_gates"].strip(),
@@ -90,6 +91,11 @@ async def upload_stadium_data(file: UploadFile = File(...)):
     state = await state_manager.get_all_zones()
     return {"message": "Live operational telemetry successfully overwritten.", "records": len(state)}
 
+@api_router.post("/stadium/reset")
+async def reset_stadium_topology():
+    """Resets the topology to the default 15-node FIFA layout."""
+    state_manager._init_state()
+    return {"message": "Topology reset to 15 nodes."}
 
 @api_router.post("/agent/run")
 async def run_agent_workflow():

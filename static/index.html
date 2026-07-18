@@ -83,11 +83,11 @@
             <p class="text-xs text-slate-400 mb-6">Real-time DAG topology displaying 15 physical zones. Nodes flash orange (70-90%) or red (>90%) on threshold breaches. Action items populate automatically.</p>
             
             <div class="relative w-full overflow-x-auto pb-4">
-                <div id="circuitBoard" class="relative min-w-[1000px] h-[700px] bg-slate-900/50 rounded-lg border border-slate-800 flex items-center justify-center">
+                <div id="circuitBoard" class="relative bg-slate-900/50 rounded-lg border border-slate-800 flex items-center justify-center" style="min-width: 1000px; height: 700px; position: relative; overflow: hidden;">
                     <!-- SVG Lines (Rendered via JS) -->
-                    <svg id="svgLines" class="circuit-lines"></svg>
+                    <svg id="svgLines" class="circuit-lines" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0;"></svg>
                     <!-- Nodes container (Rendered via JS) -->
-                    <div id="nodesContainer" class="absolute w-full h-full"></div>
+                    <div id="nodesContainer" class="absolute w-full h-full" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10;"></div>
                 </div>
             </div>
         </section>
@@ -187,6 +187,9 @@
                 <button onclick="resetSimulation()" class="py-1.5 px-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs transition-colors">
                     Reset Telemetry
                 </button>
+                <button onclick="restoreTopology()" class="py-1.5 px-3 bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-800/60 rounded text-xs transition-colors">
+                    Restore 15-Node Topology
+                </button>
                 <div class="h-6 w-px bg-slate-800 mx-2 hidden sm:block"></div>
                 <div class="flex items-center gap-2">
                     <label class="text-[10px] font-semibold text-slate-500">Upload CSV Config:</label>
@@ -270,13 +273,13 @@
                 }
 
                 nodesHTML += `
-                    <div id="node-${zone.zone_id.replace(/\s+/g, '-')}" class="absolute transform -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-10" style="left: ${coords.x}%; top: ${coords.y}%;">
-                        <div class="node-card ${colorClass} ${shapeClasses} bg-slate-950 border-2 p-2 min-w-[120px] text-center shadow-lg relative group cursor-pointer">
-                            <h4 class="text-[9px] font-bold text-slate-200 uppercase tracking-wider mb-1">${zone.zone_id}</h4>
-                            <div class="text-xs font-mono font-semibold ${percentage >= 90 ? 'text-rose-400' : (percentage >= 70 ? 'text-amber-400' : 'text-emerald-400')}">
+                    <div id="node-${zone.zone_id.replace(/\s+/g, '-')}" class="absolute flex flex-col items-center z-10" style="position: absolute; transform: translate(-50%, -50%); left: ${coords.x}%; top: ${coords.y}%;">
+                        <div class="node-card ${colorClass} ${shapeClasses} bg-slate-950 border-2 p-2 min-w-[120px] text-center shadow-lg relative group cursor-pointer" style="min-width: 120px; background-color: #0f172a; border-radius: 8px;">
+                            <h4 class="text-[9px] font-bold text-slate-200 uppercase tracking-wider mb-1" style="font-family: sans-serif;">${zone.zone_id}</h4>
+                            <div class="text-xs font-mono font-semibold ${percentage >= 90 ? 'text-rose-400' : (percentage >= 70 ? 'text-amber-400' : 'text-emerald-400')}" style="font-family: monospace;">
                                 ${zone.current_occupancy.toLocaleString()} / ${zone.max_capacity.toLocaleString()}
                             </div>
-                            <div class="text-[8px] text-slate-400 mt-0.5">${percentage}% | Flow: ${zone.velocity} /min</div>
+                            <div class="text-[8px] text-slate-400 mt-0.5" style="font-family: sans-serif;">${percentage}% | Flow: ${zone.velocity} /min</div>
                             
                             <!-- Expandable TODO list -->
                             ${todoHTML}
@@ -540,6 +543,17 @@
                     fd.append('zone_id', zone.zone_id);
                     fd.append('current_occupancy', Math.floor(zone.max_capacity * 0.3)); // 30% baseline
                     await fetch('/api/update-telemetry', { method: 'POST', body: fd });
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        async function restoreTopology() {
+            try {
+                const res = await fetch('/api/stadium/reset', { method: 'POST' });
+                if (res.ok) {
+                    alert('15-node topology restored.');
                 }
             } catch (e) {
                 console.error(e);
