@@ -42,7 +42,8 @@ async def stadium_stream():
                     "cache_size": len(stadium_agent.llm_client.response_cache),
                     "llm_trust_failures": stadium_agent.validation_failure_count,
                     "anomaly_count": len(anomaly_queue),
-                    "alerts": alerts
+                    "alerts": alerts,
+                    "current_phase": state_manager.current_phase
                 }
             }
             yield f"data: {json.dumps(payload)}\n\n"
@@ -96,6 +97,12 @@ async def reset_stadium_topology():
     """Resets the topology to the default 15-node FIFA layout."""
     state_manager._init_state()
     return {"message": "Topology reset to 15 nodes."}
+
+@api_router.post("/stadium/phase")
+async def change_stadium_phase(phase: str = Form(...)):
+    """Changes the macroscopic flow phase (INGRESS, MATCH, EGRESS)."""
+    await state_manager.set_phase(phase.upper())
+    return {"message": f"Phase updated to {phase.upper()}"}
 
 @api_router.post("/agent/run")
 async def run_agent_workflow():

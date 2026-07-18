@@ -140,14 +140,15 @@ class VolunteerAgent:
                 "width_m": z.get("width_m"),
                 "length_m": z.get("length_m"),
                 "throughput_capacity_pph": z.get("throughput_capacity_pph"),
-                "velocity": z.get("velocity"),
-                "upstream_nodes": z.get("upstream_nodes", []),
-                "downstream_nodes": z.get("downstream_nodes", [])
+                "inflow_rate": z.get("inflow_rate"),
+                "outflow_rate": z.get("outflow_rate"),
+                "net_velocity": z.get("net_velocity"),
+                "connected_nodes": z.get("connected_nodes", [])
             })
 
         prompt = f"""You are a spatial physics engine for a FIFA World Cup stadium.
 
-STADIUM DAG TOPOLOGY (with physical corridor dimensions):
+STADIUM BIDIRECTIONAL TOPOLOGY (with physical corridor dimensions):
 {json.dumps(zone_topology, indent=2)}
 
 DETECTED ANOMALIES (identified by the deterministic engine — do NOT re-identify these):
@@ -156,9 +157,9 @@ DETECTED ANOMALIES (identified by the deterministic engine — do NOT re-identif
 YOUR TASK: For each anomaly, determine the optimal multi-node flow REDISTRIBUTION strategy.
 - You MUST NOT close any node entirely. Reduce flow percentage (0-100%) at specific nodes.
 - Consider physical constraints: corridor width/length determines throughput capacity.
-- A narrow corridor (6m wide) upstream of a wide gate (12m) creates a natural bottleneck.
-- If Gate A can handle 400 ppl/hr but only 100 ppl/hr are flowing, crowd is building BEHIND it.
-- Reason across ALL connected nodes simultaneously to find the optimal redistribution.
+- Reason across ALL connected nodes simultaneously considering BIDIRECTIONAL net_velocity.
+- If a node is congested but outflow_rate is high, the bottleneck is downstream.
+- If a node is congested and inflow_rate is massive, the bottleneck is at the node itself or upstream.
 
 Return strictly valid JSON matching this schema:
 {{
