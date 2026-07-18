@@ -133,25 +133,24 @@
                     <!-- Agent Workflow Dashboard -->
                     <div class="mb-6 flex flex-col gap-3">
                         <div class="flex justify-between items-start">
-                            <div class="relative group" tabindex="0" aria-label="The autonomous reasoning engine. When triggered, it analyzes the live telemetry and drafts mitigation strategies using the LLM.">
+                            <div class="relative group" tabindex="0" aria-label="Deterministic Math Router analyzes telemetry for free. LLM only fires for multi-node spatial analysis when Commander requests it.">
                                 <div class="flex items-center gap-2">
                                     <h3 class="text-sm font-semibold text-slate-300">Workflow Engine</h3>
                                     <span class="text-[10px] cursor-help rounded-full border border-slate-600 w-3.5 h-3.5 flex items-center justify-center text-slate-400 bg-slate-900 hover:bg-slate-700" aria-hidden="true">?</span>
                                 </div>
-                                <p class="text-[10px] text-slate-500 mt-1">Autonomous LLM drafting</p>
+                                <p class="text-[10px] text-slate-500 mt-1">Split-Plane: Deterministic + LLM</p>
                                 <!-- Tooltip popup -->
                                 <div class="absolute top-full left-0 mt-2 hidden group-hover:block group-focus:block w-56 p-3 bg-slate-800 text-slate-200 text-xs rounded shadow-xl z-20 border border-slate-700 leading-relaxed">
-                                    <strong>Reasoning Engine:</strong> Analyzes telemetry and utilizes the language model to automatically draft optimal mitigation and routing strategies.
+                                    <strong>Split-Plane Architecture:</strong> "Run Diagnostics" is free (0 tokens). "Analyze Anomalies" fires the LLM for multi-node flow redistribution decisions.
                                 </div>
                             </div>
                             <div class="flex flex-col items-end gap-2">
-                                <button onclick="runAgentWorkflow()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded shadow transition-colors focus:ring focus:ring-blue-500 focus:outline-none" aria-label="Run Diagnostics Workflow">
+                                <button onclick="runAgentWorkflow()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded shadow transition-colors focus:ring focus:ring-blue-500 focus:outline-none" aria-label="Run Diagnostics (Free, 0 tokens)">
                                     Run Diagnostics
                                 </button>
-                                <label class="flex items-center gap-1.5 text-[10px] text-amber-400 font-semibold cursor-pointer" title="Only 15 requests allowed per day!">
-                                    <input type="checkbox" id="llmToggle" class="accent-amber-500 w-3 h-3">
-                                    Live API
-                                </label>
+                                <button id="analyzeBtn" onclick="analyzeAnomalies()" class="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs rounded shadow transition-colors focus:ring focus:ring-amber-500 focus:outline-none hidden" aria-label="Analyze Anomalies (Uses 1 LLM call)">
+                                    ⚡ Analyze Anomalies <span id="anomalyBadge" class="ml-1 bg-rose-500 text-white rounded-full px-1.5 py-0.5 text-[9px] font-bold">0</span>
+                                </button>
                             </div>
                         </div>
 
@@ -256,6 +255,17 @@
             }
             
             document.getElementById('cacheDisplay').innerText = `${payload.system.cache_size} items`;
+
+            // Update Anomaly Queue Badge
+            const anomalyCount = payload.system.anomaly_count || 0;
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            const anomalyBadge = document.getElementById('anomalyBadge');
+            if (anomalyCount > 0) {
+                analyzeBtn.classList.remove('hidden');
+                anomalyBadge.innerText = anomalyCount;
+            } else {
+                analyzeBtn.classList.add('hidden');
+            }
 
             // Update df.info style table
             const tbody = document.getElementById('ingestionTableBody');
@@ -384,7 +394,6 @@
                         await fetch('/api/update-telemetry', { method: 'POST', body: fd });
                     }
                 }
-                // fetchStadiumState(); replaced by SSE
                 runAgentWorkflow();
             } catch (e) {
                 console.error(e);
@@ -428,7 +437,6 @@
                 const res = await fetch('/api/upload-csv', { method: 'POST', body: formData });
                 if (res.ok) {
                     alert('Configuration dataset uploaded successfully.');
-                    // fetchStadiumState(); replaced by SSE
                     runAgentWorkflow();
                 } else {
                     const err = await res.json();
@@ -439,21 +447,16 @@
             }
         });
 
-        // Run Agent reasoning
+        // Run Agent reasoning — purely deterministic, 0 API tokens
         async function runAgentWorkflow() {
             const summaryBox = document.getElementById('agentSummary');
             const traceLog = document.getElementById('agentTraceLog');
             
-            const useLlm = document.getElementById('llmToggle') ? document.getElementById('llmToggle').checked : false;
-            
             summaryBox.innerHTML = '<strong>Status:</strong> Processing current telemetry datasets...';
-            traceLog.innerHTML = '<p class="text-blue-500">// Processing real-time telemetry inputs...</p>';
-            
-            const formData = new FormData();
-            formData.append('force_llm', useLlm);
+            traceLog.innerHTML = '<p class="text-blue-500">// Running deterministic Math Router (0 tokens)...</p>';
             
             try {
-                const res = await fetch('/api/agent/run', { method: 'POST', body: formData });
+                const res = await fetch('/api/agent/run', { method: 'POST' });
                 const d = await res.json();
 
                 summaryBox.innerHTML = `<strong>Status:</strong> ${d.decision}`;
@@ -463,17 +466,57 @@
                     d.execution_trace.forEach(trace => {
                         let textClass = 'text-slate-300';
                         if (trace.includes('[Escalation]')) textClass = 'text-rose-400 font-bold';
-                        else if (trace.includes('[Task]') || trace.includes('[LLM Task Assigned]')) textClass = 'text-amber-400';
+                        else if (trace.includes('[Math Router]')) textClass = 'text-amber-400';
                         else if (trace.includes('[Dispatched]')) textClass = 'text-emerald-400';
+                        else if (trace.includes('[Anomaly Queue]')) textClass = 'text-cyan-400 font-bold';
+                        else if (trace.includes('FLOW_MISMATCH')) textClass = 'text-amber-300';
                         
                         traceLog.innerHTML += `<div class="${textClass} border-l-2 pl-2 border-slate-800 py-0.5 mb-1">${trace}</div>`;
                     });
                 } else {
-                    traceLog.innerHTML += `<div class="text-slate-300 border-l-2 pl-2 border-slate-800 py-0.5">Queue was empty. No actions taken.</div>`;
+                    traceLog.innerHTML += `<div class="text-slate-300 border-l-2 pl-2 border-slate-800 py-0.5">No anomalies detected. All zones green.</div>`;
                 }
             } catch (err) {
                 summaryBox.innerHTML = '<strong>Status:</strong> Connection error.';
-                traceLog.innerHTML = '<p class="text-rose-500">[ERROR] Failed to query local agentic orchestration framework.</p>';
+                traceLog.innerHTML = '<p class="text-rose-500">[ERROR] Failed to query deterministic engine.</p>';
+            }
+        }
+
+        // Analyze Anomalies — HITL gate, fires 1 LLM call
+        async function analyzeAnomalies() {
+            const summaryBox = document.getElementById('agentSummary');
+            const traceLog = document.getElementById('agentTraceLog');
+            
+            summaryBox.innerHTML = '<strong>Status:</strong> ⚡ Firing LLM spatial analysis (1 API call)...';
+            traceLog.innerHTML = '<p class="text-amber-500 animate-pulse">// Sending anomalies to Gemini for multi-node flow redistribution analysis...</p>';
+            
+            try {
+                const res = await fetch('/api/agent/analyze', { method: 'POST' });
+                const d = await res.json();
+
+                summaryBox.innerHTML = `<strong>Status:</strong> ${d.decision}`;
+                traceLog.innerHTML = '';
+                
+                if (d.execution_trace && d.execution_trace.length > 0) {
+                    d.execution_trace.forEach(trace => {
+                        let textClass = 'text-slate-300';
+                        if (trace.includes('FLOW_MISMATCH') || trace.includes('CASCADE_RISK')) textClass = 'text-amber-400 font-bold';
+                        else if (trace.includes('MEDICAL_ROUTING')) textClass = 'text-rose-400 font-bold';
+                        else if (trace.includes('Reduce flow')) textClass = 'text-cyan-300';
+                        else if (trace.includes('[L2 GATE SUMMARY]')) textClass = 'text-emerald-400';
+                        
+                        traceLog.innerHTML += `<div class="${textClass} border-l-2 pl-2 border-slate-800 py-0.5 mb-1">${trace}</div>`;
+                    });
+                }
+
+                if (d.alerts && d.alerts.length > 0) {
+                    d.alerts.forEach(alert => {
+                        traceLog.innerHTML += `<div class="text-rose-500 border-l-2 pl-2 border-rose-800 py-0.5 mb-1">${alert}</div>`;
+                    });
+                }
+            } catch (err) {
+                summaryBox.innerHTML = '<strong>Status:</strong> LLM analysis failed.';
+                traceLog.innerHTML = '<p class="text-rose-500">[ERROR] Failed to connect to spatial analysis endpoint.</p>';
             }
         }
 
@@ -483,13 +526,10 @@
             const query = document.getElementById('fanInput').value;
             const resultBox = document.getElementById('translateResult');
             resultBox.classList.remove('hidden');
-            resultBox.innerHTML = '<p class="text-slate-400 animate-pulse">// Running classification model...</p>';
-
-            const useLlm = document.getElementById('llmToggle') ? document.getElementById('llmToggle').checked : false;
+            resultBox.innerHTML = '<p class="text-slate-400 animate-pulse">// Translating via Google Translate (0 tokens)...</p>';
             
             const formData = new FormData();
             formData.append('query', query);
-            formData.append('force_llm', useLlm);
 
             try {
                 const res = await fetch('/api/translate', { method: 'POST', body: formData });

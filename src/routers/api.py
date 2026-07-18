@@ -1,6 +1,4 @@
 import asyncio
-import csv
-import io
 import json
 import logging
 
@@ -8,7 +6,11 @@ from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
 
 from src.domain.agent import VolunteerAgent
+from src.domain.deterministic_rules import detect_critical_intent
 from src.domain.state import StadiumStateManager, ZoneModel
+
+import csv
+import io
 
 logger = logging.getLogger(__name__)
 
@@ -16,19 +18,22 @@ api_router = APIRouter(prefix="/api")
 state_manager = StadiumStateManager()
 stadium_agent = VolunteerAgent()
 
+
 @api_router.get("/stadium", response_model=list[ZoneModel])
 async def get_stadium_state():
     """Returns the current snapshot of the stadium's zone states."""
     state = await state_manager.get_all_zones()
     return state
 
+
 @api_router.get("/stadium/stream")
 async def stadium_stream():
-    """Server-Sent Events endpoint pushing real-time stadium telemetry, system metrics, and closed-loop alerts."""
+    """Server-Sent Events endpoint pushing real-time stadium telemetry, system metrics, anomaly queue, and alerts."""
     async def event_generator():
         while True:
             state = await state_manager.get_all_zones()
             alerts = await state_manager.flush_alerts()
+            anomaly_queue = await state_manager.get_anomaly_queue()
             payload = {
                 "zones": state,
                 "system": {
@@ -36,12 +41,14 @@ async def stadium_stream():
                     "quota_limit": stadium_agent.llm_client.DAILY_LIMIT,
                     "cache_size": len(stadium_agent.llm_client.response_cache),
                     "llm_trust_failures": stadium_agent.validation_failure_count,
+                    "anomaly_count": len(anomaly_queue),
                     "alerts": alerts
                 }
             }
             yield f"data: {json.dumps(payload)}\n\n"
             await asyncio.sleep(2)
     return StreamingResponse(event_generator(), media_type="text/event-stream")
+
 
 @api_router.post("/update-telemetry")
 async def update_telemetry(zone_id: str = Form(...), current_occupancy: int = Form(...)):
@@ -51,6 +58,7 @@ async def update_telemetry(zone_id: str = Form(...), current_occupancy: int = Fo
         raise HTTPException(status_code=404, detail="Stadium zone not found.")
     state = await state_manager.get_all_zones()
     return {"message": "Telemetry metrics recorded", "zones": state}
+
 
 @api_router.post("/upload-csv")
 async def upload_stadium_data(file: UploadFile = File(...)):
@@ -82,94 +90,120 @@ async def upload_stadium_data(file: UploadFile = File(...)):
     state = await state_manager.get_all_zones()
     return {"message": "Live operational telemetry successfully overwritten.", "records": len(state)}
 
-@api_router.post("/agent/run")
-async def run_agent_workflow(force_llm: bool = Form(False)):
-    """
-    Triggers the agent to evaluate the active telemetry state and fire workflows.
 
-    Closed-Loop Validation Pipeline:
-        L1 (Schema Gate) — handled inside VolunteerAgent.process_telemetry()
-        L2 (Topology Gate) — validated here before applying mitigations to state
-        State Snapshot — taken before any LLM-driven mutation for rollback safety
+@api_router.post("/agent/run")
+async def run_agent_workflow():
+    """
+    Purely deterministic telemetry analysis. Costs 0 API tokens.
+
+    Runs the Math Router to identify threshold breaches and returns
+    the current anomaly queue. The "Run Diagnostics" button calls this freely.
     """
     state = await state_manager.get_all_zones()
     if not state:
         raise HTTPException(status_code=400, detail="Operational state database is empty.")
 
-    result = stadium_agent.process_telemetry(state, force_llm=force_llm)
+    result = stadium_agent.process_telemetry(state)
 
-    # L2 Topology Gate: validate and apply physical mitigations to state manager
-    tasks = result.get("tasks", [])
-    if tasks:
-        # Snapshot state before LLM-driven mutations
-        await state_manager.snapshot_state()
-        bottlenecks = await state_manager.identify_bottleneck_zones()
-
-        applied_count = 0
-        rejected_count = 0
-        topology_alerts: list[str] = []
-
-        for task in tasks:
-            args = task.get("arguments", {})
-            zone_id = args.get("zone_id")
-            instructions = args.get("instructions")
-
-            if not zone_id or not instructions:
-                topology_alerts.append(
-                    f"[L2 TOPOLOGY REJECTION] Task missing zone_id or instructions: {args}"
-                )
-                rejected_count += 1
-                continue
-
-            # L2: Verify the proposed zone is upstream of at least one bottleneck
-            is_valid_upstream = False
-            if bottlenecks:
-                for bottleneck_id in bottlenecks:
-                    if await state_manager.validate_upstream_mitigation(bottleneck_id, zone_id):
-                        is_valid_upstream = True
-                        break
-
-            if not is_valid_upstream and bottlenecks:
-                topology_alerts.append(
-                    f"[L2 TOPOLOGY REJECTION] '{zone_id}' is not upstream of any bottleneck "
-                    f"{bottlenecks}. Mitigation '{instructions}' blocked."
-                )
-                rejected_count += 1
-                continue
-
-            # Passed L2 — apply mitigation
-            applied = await state_manager.update_mitigation(zone_id, instructions)
-            if applied:
-                applied_count += 1
-            else:
-                rejected_count += 1
-
-        # If ALL tasks were rejected by L2, rollback state
-        if applied_count == 0 and rejected_count > 0:
-            await state_manager.rollback_state()
-            topology_alerts.append(
-                "[L2 FULL REJECTION] All LLM-proposed mitigations failed topology validation. "
-                "State rolled back to pre-LLM snapshot."
-            )
-
-        # Merge topology alerts into result
-        existing_alerts = result.get("alerts", [])
-        existing_alerts.extend(topology_alerts)
-        if existing_alerts:
-            result["alerts"] = existing_alerts
-
-        # Add application summary to execution trace
-        trace = result.get("execution_trace", [])
-        trace.append(
-            f"[L2 GATE SUMMARY] Applied: {applied_count}, Rejected: {rejected_count}"
+    # Include the current anomaly queue in the response
+    anomaly_queue = await state_manager.get_anomaly_queue()
+    result["anomaly_count"] = len(anomaly_queue)
+    if anomaly_queue:
+        result["execution_trace"].append(
+            f"[Anomaly Queue] {len(anomaly_queue)} pending anomalies detected by flow-rate analysis."
         )
-        result["execution_trace"] = trace
+        for anomaly in anomaly_queue:
+            a_type = anomaly.get("type", "UNKNOWN")
+            a_zone = anomaly.get("zone_id", "?")
+            if a_type == "FLOW_MISMATCH":
+                result["execution_trace"].append(
+                    f"  → [{a_type}] '{a_zone}': actual flow {anomaly.get('actual_flow_pph', '?')} pph "
+                    f"vs capacity {anomaly.get('capacity_pph', '?')} pph"
+                )
+            else:
+                result["execution_trace"].append(
+                    f"  → [{a_type}] '{a_zone}': {anomaly.get('action', 'pending')}"
+                )
 
     return result
 
+
+@api_router.post("/agent/analyze")
+async def analyze_anomalies():
+    """
+    The ONLY endpoint that fires the LLM. Costs 1 API call.
+
+    HITL Gate: Only fires when the Commander explicitly clicks "Analyze Anomalies".
+    Batches all queued anomalies into a single prompt and asks the LLM to determine
+    multi-node flow redistribution percentages based on physical corridor dimensions.
+
+    The LLM does NOT identify problems (deterministic engine already did).
+    The LLM determines which nodes should have flow REDUCED and by how much.
+    """
+    anomaly_queue = await state_manager.get_anomaly_queue()
+
+    if not anomaly_queue:
+        return {
+            "decision": "[NO ANOMALIES] Queue is empty. No spatial analysis needed.",
+            "execution_trace": ["[Queue Empty] Run diagnostics first to detect anomalies."]
+        }
+
+    state = await state_manager.get_all_zones()
+
+    # Fire the LLM — single API call for all queued anomalies
+    result = stadium_agent.analyze_spatial_anomaly(anomaly_queue, state)
+
+    # Apply validated redistributions to state if analysis succeeded
+    analyses = result.get("analyses", [])
+    if analyses:
+        await state_manager.snapshot_state()
+        applied_count = 0
+
+        for analysis in analyses:
+            for redist in analysis.get("redistributions", []):
+                zone_id = redist.get("zone_id")
+                reduce_pct = redist.get("reduce_flow_pct", 0)
+                reasoning = redist.get("reasoning", "")
+
+                mitigation_label = f"Flow reduced {reduce_pct}%: {reasoning[:60]}"
+                applied = await state_manager.update_mitigation(zone_id, mitigation_label)
+                if applied:
+                    applied_count += 1
+
+        trace = result.get("execution_trace", [])
+        trace.append(f"[L2 GATE SUMMARY] Applied: {applied_count} flow redistributions")
+        result["execution_trace"] = trace
+
+        # Flush the anomaly queue on successful analysis
+        await state_manager.flush_anomaly_queue()
+
+    return result
+
+
 @api_router.post("/translate")
-async def translate_query(query: str = Form(...), force_llm: bool = Form(False)):
-    """Processes verbal input to assess priority and translates the instructions."""
+async def translate_query(query: str = Form(...)):
+    """
+    Processes fan input using Google Translate (free, 0 API tokens).
+    CRITICAL keyword screening is done locally via regex.
+
+    If a CRITICAL emergency is detected, the response includes
+    requires_llm_routing=True to signal the frontend that the Commander
+    should trigger spatial analysis for crowd routing.
+    """
     if not query.strip():
         raise HTTPException(status_code=400, detail="Query text must be valid.")
-    return stadium_agent.interpret_fan_query(query, force_llm=force_llm)
+
+    result = stadium_agent.interpret_fan_query(query)
+
+    # If CRITICAL, auto-queue a medical routing anomaly for LLM analysis
+    if result.get("requires_llm_routing"):
+        await state_manager.append_anomaly({
+            "type": "MEDICAL_ROUTING",
+            "zone_id": "FIELD_REPORT",
+            "query": query,
+            "translated_en": result.get("translated_response_en", ""),
+            "action": "MEDICAL EMERGENCY — Requires multi-node crowd routing decision",
+            "timestamp": result.get("translated_response_en", "")
+        })
+
+    return result
