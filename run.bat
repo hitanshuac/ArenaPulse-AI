@@ -13,4 +13,5 @@ echo Installing dependencies...
 pip install -r requirements.txt
 
 echo Launching FastAPI Application...
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+start http://localhost:8000/
+uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload
