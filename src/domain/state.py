@@ -157,6 +157,13 @@ class StadiumStateManager:
                 width_m=50.0, length_m=30.0, throughput_capacity_pph=3000
             ),
         }
+        
+        # Physics Fix 1: Calculate max_capacity dynamically from physical dimensions
+        # Density: 4 persons per square meter for standing/flowing crowd.
+        for zid, z in self._zones.items():
+            if z.node_type not in ["seating", "external"] or "Plaza" in zid:
+                z.max_capacity = int(z.width_m * z.length_m * 4)
+
         self._snapshot: dict[str, ZoneModel] | None = None
         self._mitigation_tick_counter: dict[str, int] = {}
         self._mitigation_baseline_occupancy: dict[str, dict[str, int]] = {}
@@ -279,7 +286,8 @@ class StadiumStateManager:
                 for ext_id in ["Parking A", "Parking B"]:
                     if ext_id in self._zones:
                         ext = self._zones[ext_id]
-                        add = random.randint(50, 150)
+                        # Throttle arrival rate to maintain 30-70% steady-state
+                        add = random.randint(30, 80)
                         ext.current_occupancy = min(ext.max_capacity, ext.current_occupancy + add)
                         ext.inflow_rate += add
             elif self.current_phase == "EGRESS":
@@ -287,7 +295,8 @@ class StadiumStateManager:
                 for ext_id in ["Parking A", "Parking B"]:
                     if ext_id in self._zones:
                         ext = self._zones[ext_id]
-                        sub = random.randint(100, 300)
+                        # Higher drain rate to clear the lot as people leave
+                        sub = random.randint(150, 400)
                         if ext.current_occupancy >= sub:
                             ext.current_occupancy -= sub
                             ext.outflow_rate += sub
@@ -345,7 +354,20 @@ class StadiumStateManager:
                     if flow_amount > 0:
                         if zone.mitigation_active:
                             flow_amount = int(flow_amount * 0.2) # Mitigation throttles outflow
-                        transfers.append((zone_id, neighbor_id, flow_amount))
+                            
+                        # PHYSICS FIX 2: Bottleneck by throughput capacity
+                        # throughput_capacity_pph is per hour. Tick is roughly 1 simulation minute.
+                        max_flow_per_minute = int(min(zone.throughput_capacity_pph, neighbor_zone.throughput_capacity_pph) / 60)
+                        
+                        # Apply physical bottleneck limit
+                        flow_amount = min(flow_amount, max_flow_per_minute)
+                        
+                        # PHYSICS FIX 3: Clamp to available physical space in the target node
+                        available_space = neighbor_zone.max_capacity - neighbor_zone.current_occupancy
+                        flow_amount = min(flow_amount, available_space)
+
+                        if flow_amount > 0:
+                            transfers.append((zone_id, neighbor_id, flow_amount))
 
             # Apply transfers
             for source, sink, amount in transfers:
