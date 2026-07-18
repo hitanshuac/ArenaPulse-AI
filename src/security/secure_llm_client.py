@@ -21,6 +21,14 @@ class SecureLLMClient:
         self.daily_calls_made = 0
         self.DAILY_LIMIT = 15
 
+    def invalidate_cache_for_state(self, state_data: Any) -> bool:
+        """Evicts a poisoned cache entry when downstream validation fails."""
+        state_hash = self._generate_state_hash(state_data)
+        if state_hash in self.response_cache:
+            del self.response_cache[state_hash]
+            return True
+        return False
+
     def _generate_state_hash(self, data: Any) -> str:
         """Creates a unique hash for the current data to check against the cache."""
         return hashlib.md5(json.dumps(data, sort_keys=True).encode('utf-8')).hexdigest()
