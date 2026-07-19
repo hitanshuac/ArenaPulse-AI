@@ -158,12 +158,12 @@ def run_deterministic_crowd_analysis(zones: list[dict[str, Any]]) -> dict[str, A
                     "percentage": percentage,
                     "gates": zone.get("associated_gates", "N/A"),
                     "node_type": zone.get("node_type", "corridor"),
-                    "upstream_nodes": zone.get("upstream_nodes", []),
+                    "upstream_nodes": zone.get("connected_nodes", []),
                 }
                 critical_zones.append(zone_data)
 
                 if percentage >= 80.0:
-                    upstream = zone.get("upstream_nodes", [])
+                    upstream = zone.get("connected_nodes", [])
                     divert_to = upstream[0] if upstream else "N/A"
                     anomalies.append(
                         {

@@ -66,7 +66,7 @@ class VolunteerAgent:
                 connected_nodes=zone.get("connected_nodes", [])
             )
 
-            upstream_nodes = zone.get("upstream_nodes", [])
+            upstream_nodes = zone.get("connected_nodes", [])
             redistributions = []
 
             # Deterministically decide reduction percentages
