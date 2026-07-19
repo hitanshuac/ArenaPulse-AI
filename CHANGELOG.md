@@ -2,6 +2,15 @@
 
 <!-- version list -->
 
+## v1.0.1 (2026-07-19)
+
+### Bug Fixes
+
+- **agent**: Resolve 0 redistributions in deterministic fallback by using connected_nodes instead of
+  upstream_nodes
+  ([`1f44d7d`](https://github.com/hitanshuac/ArenaPulse-AI/commit/1f44d7d3173ae2fde6964c990f1dc96e1c717876))
+
+
 ## v1.0.0 (2026-07-19)
 
 - Initial Release
