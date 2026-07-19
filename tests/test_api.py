@@ -4,13 +4,11 @@ from src.main import app
 
 client = TestClient(app)
 
+
 def test_update_telemetry_endpoint():
     """Validates the API routes and backend state mutations work synchronously."""
     # Send an update
-    response = client.post("/api/update-telemetry", data={
-        "zone_id": "North Gate",
-        "current_occupancy": 7777
-    })
+    response = client.post("/api/update-telemetry", data={"zone_id": "Gate A", "current_occupancy": 7777})
 
     assert response.status_code == 200
     assert response.json()["message"] == "Telemetry metrics recorded"
@@ -20,6 +18,6 @@ def test_update_telemetry_endpoint():
     assert state_res.status_code == 200
 
     zones = state_res.json()
-    zone_a = next(z for z in zones if z["zone_id"] == "North Gate")
+    zone_a = next(z for z in zones if z["zone_id"] == "Gate A")
 
     assert zone_a["current_occupancy"] == 7777

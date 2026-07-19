@@ -15,14 +15,20 @@ This handover document provides structural, logical, and execution context for t
 All workspace files are modular and kept lightweight to stay well below the 10 MB repository limit.
 
 ```text
-├── requirements.txt            # Minimal dependencies (FastAPI, google-generativeai)
+├── requirements.txt            # Minimal dependencies (FastAPI, google-generativeai, pillow, pytest)
 ├── .gitignore                  # Active patterns to exclude .venv, Pycache, and IDE configs
-├── tests/
-│   └── test_app.py             # Active unit testing suite for fallback validation
+├── tests/                      # Active test suites for API, state, security, and architecture
 ├── static/
 │   └── index.html              # Frontend dashboard with live Chart.js time-series logic
-└── app/
-    ├── __init__.py
-    ├── main.py                 # FastAPI backend, CSV processing, & telemetry routes
-    ├── agent_engine.py         # Google AI Studio (Gemini 1.5 Flash) Orchestrator & Tool Caller
-    └── deterministic_rules.py  # Local fallback safety engine (Offline / API failure resilience)
+├── data/                       # SRE Observability and generated output logs
+└── src/
+    ├── main.py                 # FastAPI backend, background simulated IoT
+    ├── routers/api.py          # Telemetry and dashboard routing
+    ├── domain/                 # Core operational logic
+    │   ├── agent.py            # AI simulation agent
+    │   ├── models.py           # Pydantic data schemas
+    │   ├── physics.py          # Gravity-based physics flow engine
+    │   ├── state.py            # DAG spatial state manager
+    │   └── deterministic_rules.py # Local fallback safety engine & physical validations
+    └── security/
+        └── secure_llm_client.py # Cached Gemini interactions for quota optimization

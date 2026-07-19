@@ -11,7 +11,9 @@ def secure_client():
     # Force api available for testing
     with patch.dict(os.environ, {"GEMINI_API_KEY": "test_key"}):
         client = SecureLLMClient()
+        client.daily_calls_made = 0
         return client
+
 
 @patch("src.security.secure_llm_client.genai.GenerativeModel")
 def test_client_memoization_cache(mock_model_class, secure_client):
@@ -38,6 +40,7 @@ def test_client_memoization_cache(mock_model_class, secure_client):
     # Still 1 call made!
     assert secure_client.daily_calls_made == 1
     mock_model_instance.generate_content.assert_called_once()
+
 
 def test_client_quota_exhaustion(secure_client):
     """Validates that the quota limit is aggressively respected."""

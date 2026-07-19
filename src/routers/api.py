@@ -1,4 +1,6 @@
 import asyncio
+import csv
+import io
 import json
 import logging
 
@@ -6,11 +8,8 @@ from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
 
 from src.domain.agent import VolunteerAgent
-from src.domain.deterministic_rules import detect_critical_intent
-from src.domain.state import StadiumStateManager, ZoneModel
-
-import csv
-import io
+from src.domain.models import ZoneModel
+from src.domain.state import StadiumStateManager
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +28,7 @@ async def get_stadium_state():
 @api_router.get("/stadium/stream")
 async def stadium_stream():
     """Server-Sent Events endpoint pushing real-time stadium telemetry, system metrics, anomaly queue, and alerts."""
+
     async def event_generator():
         while True:
             state = await state_manager.get_all_zones()
@@ -43,11 +43,14 @@ async def stadium_stream():
                     "llm_trust_failures": stadium_agent.validation_failure_count,
                     "anomaly_count": len(anomaly_queue),
                     "alerts": alerts,
-                    "current_phase": state_manager.current_phase
-                }
+                    "current_phase": state_manager.current_phase,
+                    "match_minute": state_manager.match_minute,
+                    "match_running": state_manager.match_running,
+                },
             }
             yield f"data: {json.dumps(payload)}\n\n"
             await asyncio.sleep(2)
+
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 
@@ -64,33 +67,36 @@ async def update_telemetry(zone_id: str = Form(...), current_occupancy: int = Fo
 @api_router.post("/upload-csv")
 async def upload_stadium_data(file: UploadFile = File(...)):
     """Accepts CSV updates for evaluations. Allows testing dynamic capabilities."""
-    if not file.filename.endswith('.csv'):
+    if not file.filename.endswith(".csv"):
         raise HTTPException(status_code=400, detail="Unsupported file format. Must be a .csv file.")
 
     contents = await file.read()
-    decoded = contents.decode('utf-8')
+    decoded = contents.decode("utf-8")
     reader = csv.DictReader(io.StringIO(decoded))
 
     temp_state = []
     try:
         for row in reader:
-            temp_state.append({
-                "zone_id": row["zone_id"].strip(),
-                "node_type": "corridor", # default fallback
-                "current_occupancy": int(row["current_occupancy"].strip()),
-                "max_capacity": int(row["max_capacity"].strip()),
-                "associated_gates": row["associated_gates"].strip(),
-                "velocity": 0
-            })
+            temp_state.append(
+                {
+                    "zone_id": row["zone_id"].strip(),
+                    "node_type": "corridor",  # default fallback
+                    "current_occupancy": int(row["current_occupancy"].strip()),
+                    "max_capacity": int(row["max_capacity"].strip()),
+                    "associated_gates": row["associated_gates"].strip(),
+                    "velocity": 0,
+                }
+            )
     except (KeyError, ValueError):
         raise HTTPException(
             status_code=400,
-            detail="Malformed template. Columns required: zone_id, current_occupancy, max_capacity, associated_gates."
+            detail="Malformed template. Columns required: zone_id, current_occupancy, max_capacity, associated_gates.",
         )
 
     await state_manager.apply_bulk_update(temp_state)
     state = await state_manager.get_all_zones()
     return {"message": "Live operational telemetry successfully overwritten.", "records": len(state)}
+
 
 @api_router.post("/stadium/reset")
 async def reset_stadium_topology():
@@ -98,11 +104,13 @@ async def reset_stadium_topology():
     state_manager._init_state()
     return {"message": "Topology reset to 15 nodes."}
 
+
 @api_router.post("/stadium/phase")
 async def change_stadium_phase(phase: str = Form(...)):
     """Changes the macroscopic flow phase (INGRESS, MATCH, EGRESS)."""
     await state_manager.set_phase(phase.upper())
     return {"message": f"Phase updated to {phase.upper()}"}
+
 
 @api_router.post("/agent/run")
 async def run_agent_workflow():
@@ -134,9 +142,7 @@ async def run_agent_workflow():
                     f"vs capacity {anomaly.get('capacity_pph', '?')} pph"
                 )
             else:
-                result["execution_trace"].append(
-                    f"  → [{a_type}] '{a_zone}': {anomaly.get('action', 'pending')}"
-                )
+                result["execution_trace"].append(f"  → [{a_type}] '{a_zone}': {anomaly.get('action', 'pending')}")
 
     return result
 
@@ -158,7 +164,7 @@ async def analyze_anomalies():
     if not anomaly_queue:
         return {
             "decision": "[NO ANOMALIES] Queue is empty. No spatial analysis needed.",
-            "execution_trace": ["[Queue Empty] Run diagnostics first to detect anomalies."]
+            "execution_trace": ["[Queue Empty] Run diagnostics first to detect anomalies."],
         }
 
     state = await state_manager.get_all_zones()
@@ -210,13 +216,15 @@ async def translate_query(query: str = Form(...)):
 
     # If CRITICAL, auto-queue a medical routing anomaly for LLM analysis
     if result.get("requires_llm_routing"):
-        await state_manager.append_anomaly({
-            "type": "MEDICAL_ROUTING",
-            "zone_id": "FIELD_REPORT",
-            "query": query,
-            "translated_en": result.get("translated_response_en", ""),
-            "action": "MEDICAL EMERGENCY — Requires multi-node crowd routing decision",
-            "timestamp": result.get("translated_response_en", "")
-        })
+        await state_manager.append_anomaly(
+            {
+                "type": "MEDICAL_ROUTING",
+                "zone_id": "FIELD_REPORT",
+                "query": query,
+                "translated_en": result.get("translated_response_en", ""),
+                "action": "MEDICAL EMERGENCY — Requires multi-node crowd routing decision",
+                "timestamp": result.get("translated_response_en", ""),
+            }
+        )
 
     return result

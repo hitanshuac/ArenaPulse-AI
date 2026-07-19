@@ -3,30 +3,20 @@ import asyncio
 import pytest
 from pydantic import ValidationError
 
-from src.domain.state import StadiumStateManager, ZoneModel
+from src.domain.models import ZoneModel
+from src.domain.state import StadiumStateManager
 
 
 def test_zone_model_validation():
     """Validates that Pydantic enforces correct schemas and rejects invalid metric values."""
     # Should raise error for negative current_occupancy
     with pytest.raises(ValidationError):
-        ZoneModel(
-            zone_id="Gate 1",
-            current_occupancy=-100,
-            max_capacity=5000,
-            associated_gates="Gate 1",
-            velocity=0
-        )
+        ZoneModel(zone_id="Gate 1", current_occupancy=-100, max_capacity=5000, associated_gates="Gate 1", velocity=0)
 
     # Should raise error for zero max_capacity
     with pytest.raises(ValidationError):
-        ZoneModel(
-            zone_id="Gate 1",
-            current_occupancy=100,
-            max_capacity=0,
-            associated_gates="Gate 1",
-            velocity=0
-        )
+        ZoneModel(zone_id="Gate 1", current_occupancy=100, max_capacity=0, associated_gates="Gate 1", velocity=0)
+
 
 def test_state_manager_singleton():
     """Validates that StadiumStateManager operates as a Singleton."""
@@ -43,11 +33,11 @@ def test_state_update_occupancy():
     manager._init_state()
 
     async def run_test():
-        success = await manager.update_zone_occupancy("North Gate", 500)
+        success = await manager.update_zone_occupancy("Gate A", 500)
         assert success is True
 
         all_zones = await manager.get_all_zones()
-        zone_a = next(z for z in all_zones if z["zone_id"] == "North Gate")
+        zone_a = next(z for z in all_zones if z["zone_id"] == "Gate A")
 
         assert zone_a["current_occupancy"] == 500
 

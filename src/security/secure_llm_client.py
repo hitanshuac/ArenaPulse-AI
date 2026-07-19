@@ -1,7 +1,7 @@
 import hashlib
 import json
 import os
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 import google.generativeai as genai
@@ -12,6 +12,7 @@ class SecureLLMClient:
     Interceptor layer enforcing the OWASP Security mandate.
     Handles I/O sanitization, state memoization, and API quota limits.
     """
+
     def __init__(self):
         self.api_key = os.environ.get("GEMINI_API_KEY")
         self.api_available = True if self.api_key else False
@@ -26,28 +27,25 @@ class SecureLLMClient:
     def _load_quota(self) -> int:
         """Loads the API quota from persistent storage, resetting if it's a new day."""
         os.makedirs("data", exist_ok=True)
-        today = datetime.now(timezone.utc).date().isoformat()
-        
+        today = datetime.now(UTC).date().isoformat()
+
         try:
             if os.path.exists(self.quota_file):
-                with open(self.quota_file, "r", encoding="utf-8") as f:
+                with open(self.quota_file, encoding="utf-8") as f:
                     data = json.load(f)
-                    
+
                 if data.get("last_reset_date") == today:
                     return data.get("calls_made", 0)
         except Exception:
             pass
-            
+
         # It's a new day (or file missing/corrupt), reset quota to 0
         return 0
 
     def _save_quota(self):
         """Flushes the current API quota to persistent storage."""
-        today = datetime.now(timezone.utc).date().isoformat()
-        data = {
-            "last_reset_date": today,
-            "calls_made": self.daily_calls_made
-        }
+        today = datetime.now(UTC).date().isoformat()
+        data = {"last_reset_date": today, "calls_made": self.daily_calls_made}
         try:
             with open(self.quota_file, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2)
@@ -64,7 +62,7 @@ class SecureLLMClient:
 
     def _generate_state_hash(self, data: Any) -> str:
         """Creates a unique hash for the current data to check against the cache."""
-        return hashlib.md5(json.dumps(data, sort_keys=True).encode('utf-8')).hexdigest()
+        return hashlib.md5(json.dumps(data, sort_keys=True).encode("utf-8")).hexdigest()
 
     def generate_content(self, prompt: str, state_data: Any = None) -> dict[str, Any]:
         """
@@ -87,7 +85,7 @@ class SecureLLMClient:
         try:
             self.daily_calls_made += 1
             self._save_quota()
-            
+
             model = genai.GenerativeModel("gemini-3.5-flash")
             response = model.generate_content(safe_prompt, generation_config={"response_mime_type": "application/json"})
 

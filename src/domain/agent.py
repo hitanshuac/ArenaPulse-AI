@@ -1,56 +1,20 @@
 import json
 import logging
-from typing import Any, Literal
+from typing import Any
 
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import ValidationError
 
-from src.domain.deterministic_rules import run_deterministic_crowd_analysis, run_deterministic_translation, detect_critical_intent
+from src.domain.deterministic_rules import (
+    run_deterministic_crowd_analysis,
+    run_deterministic_translation,
+)
+from src.domain.models import (
+    SpatialAnalysisEnvelopeModel,
+    ValidationResult,
+)
 from src.security.secure_llm_client import SecureLLMClient
 
 logger = logging.getLogger(__name__)
-
-# ---------------------------------------------------------------------------
-# L1 Schema Gate: Pydantic validators for LLM spatial analysis output
-# ---------------------------------------------------------------------------
-
-
-class FlowRedistributionModel(BaseModel):
-    """Schema for a single node's flow adjustment in the LLM's redistribution plan."""
-    zone_id: str = Field(..., min_length=1, description="Target zone to adjust")
-    reduce_flow_pct: int = Field(..., ge=0, le=100, description="Percentage to reduce flow at this node (0-100)")
-    reasoning: str = Field(..., min_length=1, description="Why this node needs adjustment based on physical constraints")
-
-
-class SpatialAnalysisModel(BaseModel):
-    """Strict schema for the LLM's multi-node spatial physics analysis."""
-    risk_type: Literal["FLOW_MISMATCH", "MEDICAL_ROUTING", "CASCADE_RISK"] = Field(
-        ..., description="Classification of the spatial anomaly"
-    )
-    analysis: str = Field(..., min_length=1, description="LLM's spatial reasoning explanation considering corridor dimensions and flow rates")
-    redistributions: list[FlowRedistributionModel] = Field(
-        ..., min_length=1, description="Ordered list of nodes to adjust flow at"
-    )
-    priority: Literal["HIGH", "MEDIUM", "LOW"] = Field(..., description="Overall urgency")
-
-
-class SpatialAnalysisEnvelopeModel(BaseModel):
-    """Wrapper for the full LLM response containing one or more analyses."""
-    analyses: list[SpatialAnalysisModel] = Field(
-        ..., min_length=1, description="List of spatial analyses for each anomaly"
-    )
-
-
-# ---------------------------------------------------------------------------
-# Validation result container for closed-loop observability
-# ---------------------------------------------------------------------------
-
-class ValidationResult:
-    """Encapsulates the outcome of L1 schema validation with alert metadata."""
-
-    def __init__(self, valid: bool, data: Any = None, alerts: list[str] | None = None):
-        self.valid = valid
-        self.data = data
-        self.alerts = alerts or []
 
 
 def validate_spatial_analysis(raw_data: Any) -> ValidationResult:
@@ -64,7 +28,7 @@ def validate_spatial_analysis(raw_data: Any) -> ValidationResult:
             alerts=[
                 f"[L1 SCHEMA REJECTION] Spatial analysis rejected: {exc.error_count()} errors. "
                 f"First error: {exc.errors()[0]['msg']}"
-            ]
+            ],
         )
 
 
@@ -110,41 +74,38 @@ class VolunteerAgent:
         what percentage, to optimally redistribute crowd pressure.
         """
         if not anomalies:
-            return {
-                "decision": "[NO ANOMALIES] Queue is empty. Nothing to analyze.",
-                "execution_trace": []
-            }
+            return {"decision": "[NO ANOMALIES] Queue is empty. Nothing to analyze.", "execution_trace": []}
 
         # Error budget gate
         if self._is_trust_exhausted():
             return {
                 "decision": f"[TRUST BUDGET EXHAUSTED - {self.validation_failure_count} failures] "
-                            "LLM disabled. Clear anomalies manually.",
+                "LLM disabled. Clear anomalies manually.",
                 "execution_trace": [],
                 "alerts": [
                     f"[ERROR BUDGET] LLM disabled after {self.validation_failure_count} "
                     "consecutive validation failures."
-                ]
+                ],
             }
 
         # Build the spatial context for the LLM
         zone_topology = []
         for z in zones:
-            zone_topology.append({
-                "zone_id": z.get("zone_id"),
-                "current_occupancy": z.get("current_occupancy"),
-                "max_capacity": z.get("max_capacity"),
-                "occupancy_pct": round(
-                    (z.get("current_occupancy", 0) / z.get("max_capacity", 1)) * 100, 1
-                ),
-                "width_m": z.get("width_m"),
-                "length_m": z.get("length_m"),
-                "throughput_capacity_pph": z.get("throughput_capacity_pph"),
-                "inflow_rate": z.get("inflow_rate"),
-                "outflow_rate": z.get("outflow_rate"),
-                "net_velocity": z.get("net_velocity"),
-                "connected_nodes": z.get("connected_nodes", [])
-            })
+            zone_topology.append(
+                {
+                    "zone_id": z.get("zone_id"),
+                    "current_occupancy": z.get("current_occupancy"),
+                    "max_capacity": z.get("max_capacity"),
+                    "occupancy_pct": round((z.get("current_occupancy", 0) / z.get("max_capacity", 1)) * 100, 1),
+                    "width_m": z.get("width_m"),
+                    "length_m": z.get("length_m"),
+                    "throughput_capacity_pph": z.get("throughput_capacity_pph"),
+                    "inflow_rate": z.get("inflow_rate"),
+                    "outflow_rate": z.get("outflow_rate"),
+                    "net_velocity": z.get("net_velocity"),
+                    "connected_nodes": z.get("connected_nodes", []),
+                }
+            )
 
         prompt = f"""You are a spatial physics engine for a FIFA World Cup stadium.
 
@@ -184,15 +145,17 @@ Return strictly valid JSON matching this schema:
         if response["status"] == "quota_exhausted":
             return {
                 "decision": "[QUOTA EXHAUSTED] Cannot analyze. Use deterministic fallback.",
-                "execution_trace": [f"[Anomaly] {a.get('type', 'UNKNOWN')}: {a.get('zone_id', '?')}" for a in anomalies],
-                "alerts": ["[QUOTA] Daily LLM limit reached. Anomalies remain in queue for manual review."]
+                "execution_trace": [
+                    f"[Anomaly] {a.get('type', 'UNKNOWN')}: {a.get('zone_id', '?')}" for a in anomalies
+                ],
+                "alerts": ["[QUOTA] Daily LLM limit reached. Anomalies remain in queue for manual review."],
             }
 
         if response["status"] == "error":
             return {
                 "decision": f"[LLM ERROR] {response.get('error', 'Unknown error')}",
                 "execution_trace": [],
-                "alerts": [f"[LLM ERROR] {response.get('error', 'Unknown error')}"]
+                "alerts": [f"[LLM ERROR] {response.get('error', 'Unknown error')}"],
             }
 
         # L1 Schema Gate — validate BEFORE trusting
@@ -207,7 +170,7 @@ Return strictly valid JSON matching this schema:
             return {
                 "decision": "[L1 SCHEMA GATE - REJECTED] LLM output failed validation.",
                 "execution_trace": [],
-                "alerts": validation.alerts
+                "alerts": validation.alerts,
             }
 
         # Schema passed — reset failure counter
@@ -215,15 +178,14 @@ Return strictly valid JSON matching this schema:
         validated = validation.data
 
         prefix = (
-            "[CACHED LLM]" if response["status"] == "cached"
+            "[CACHED LLM]"
+            if response["status"] == "cached"
             else f"[LIVE LLM - Call {self.llm_client.daily_calls_made}/{self.llm_client.DAILY_LIMIT}]"
         )
 
         execution_trace = []
         for analysis in validated.get("analyses", []):
-            execution_trace.append(
-                f"[{analysis['risk_type']}] {analysis['analysis']}"
-            )
+            execution_trace.append(f"[{analysis['risk_type']}] {analysis['analysis']}")
             for redist in analysis.get("redistributions", []):
                 execution_trace.append(
                     f"  → Reduce flow at '{redist['zone_id']}' by {redist['reduce_flow_pct']}%: {redist['reasoning']}"
@@ -233,5 +195,5 @@ Return strictly valid JSON matching this schema:
             "decision": f"{prefix} Spatial analysis complete. {len(validated.get('analyses', []))} anomalies analyzed.",
             "execution_trace": execution_trace,
             "analyses": validated.get("analyses", []),
-            "alerts": validation.alerts if validation.alerts else []
+            "alerts": validation.alerts if validation.alerts else [],
         }
