@@ -5,6 +5,7 @@ from typing import Any
 from pydantic import ValidationError
 
 from src.domain.deterministic_rules import (
+    get_predetermined_suggestions,
     run_deterministic_crowd_analysis,
     run_deterministic_translation,
 )
@@ -42,6 +43,58 @@ class VolunteerAgent:
         """SRE error budget: if too many LLM outputs fail validation, force edge mode."""
         return self.validation_failure_count >= self.FAILURE_BUDGET
 
+    def _generate_deterministic_fallback(self, anomalies: list[dict[str, Any]], zones: list[dict[str, Any]], reason: str) -> dict[str, Any]:
+        """Generates a structured LLM-equivalent payload using purely deterministic rules."""
+        zone_map = {z.get("zone_id"): z for z in zones}
+        analyses = []
+        execution_trace = []
+
+        for anomaly in anomalies:
+            zone_id = anomaly.get("zone_id")
+            zone = zone_map.get(zone_id, {})
+
+            node_type = zone.get("node_type", "corridor")
+            capacity = zone.get("max_capacity", 1)
+            occupancy = zone.get("current_occupancy", 0)
+            percentage = (occupancy / capacity) * 100 if capacity > 0 else 0
+
+            suggestions = get_predetermined_suggestions(
+                node_type=node_type,
+                occupancy_pct=percentage,
+                length_m=zone.get("length_m", 50.0),
+                width_m=zone.get("width_m", 10.0),
+                connected_nodes=zone.get("connected_nodes", [])
+            )
+
+            upstream_nodes = zone.get("upstream_nodes", [])
+            redistributions = []
+
+            # Deterministically decide reduction percentages
+            reduce_pct = 100 if percentage >= 90 else (30 if percentage >= 70 else 0)
+
+            for upstream in upstream_nodes:
+                redistributions.append({
+                    "zone_id": upstream,
+                    "reduce_flow_pct": reduce_pct,
+                    "reasoning": f"Deterministic Fallback: Upstream reduction required due to {percentage:.1f}% congestion at {zone_id}."
+                })
+
+            analyses.append({
+                "risk_type": anomaly.get("type", "CASCADE_RISK"),
+                "analysis": " | ".join(suggestions) if suggestions else "Deterministic intervention activated.",
+                "redistributions": redistributions,
+                "priority": "HIGH" if percentage >= 90 else "MEDIUM"
+            })
+
+            execution_trace.append(f"[EDGE COMPUTE] Fallback generated for {zone_id} ({percentage:.1f}%)")
+
+        return {
+            "decision": f"[EDGE COMPUTE FALLBACK] {reason} Deterministic physical rules engaged.",
+            "execution_trace": execution_trace,
+            "analyses": analyses,
+            "alerts": [f"[FALLBACK] {reason}"]
+        }
+
     def process_telemetry(self, zones: list[dict[str, Any]]) -> dict[str, Any]:
         """
         Purely deterministic telemetry processing. Costs 0 API tokens.
@@ -78,15 +131,10 @@ class VolunteerAgent:
 
         # Error budget gate
         if self._is_trust_exhausted():
-            return {
-                "decision": f"[TRUST BUDGET EXHAUSTED - {self.validation_failure_count} failures] "
-                "LLM disabled. Clear anomalies manually.",
-                "execution_trace": [],
-                "alerts": [
-                    f"[ERROR BUDGET] LLM disabled after {self.validation_failure_count} "
-                    "consecutive validation failures."
-                ],
-            }
+            return self._generate_deterministic_fallback(
+                anomalies, zones,
+                reason=f"TRUST BUDGET EXHAUSTED - {self.validation_failure_count} failures."
+            )
 
         # Build the spatial context for the LLM
         zone_topology = []
@@ -142,14 +190,12 @@ Return strictly valid JSON matching this schema:
 
         response = self.llm_client.generate_content(prompt, state_data=anomalies)
 
-        if response["status"] == "quota_exhausted":
-            return {
-                "decision": "[QUOTA EXHAUSTED] Cannot analyze. Use deterministic fallback.",
-                "execution_trace": [
-                    f"[Anomaly] {a.get('type', 'UNKNOWN')}: {a.get('zone_id', '?')}" for a in anomalies
-                ],
-                "alerts": ["[QUOTA] Daily LLM limit reached. Anomalies remain in queue for manual review."],
-            }
+        if response["status"] in ("quota_exhausted", "api_key_missing"):
+            reason = "QUOTA EXHAUSTED - Daily LLM limit reached." if response["status"] == "quota_exhausted" else "API KEY MISSING - Operating in offline edge mode."
+            return self._generate_deterministic_fallback(
+                anomalies, zones,
+                reason=reason
+            )
 
         if response["status"] == "error":
             return {

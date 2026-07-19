@@ -76,7 +76,10 @@ class SecureLLMClient:
                 cached_resp = self.response_cache[state_hash]
                 return {"status": "cached", "data": dict(cached_resp)}
 
-        if self.daily_calls_made >= self.DAILY_LIMIT or not self.api_available:
+        if not self.api_available:
+            return {"status": "api_key_missing", "data": None}
+
+        if self.daily_calls_made >= self.DAILY_LIMIT:
             return {"status": "quota_exhausted", "data": None}
 
         # Pre-flight Defense (LLM01): Truncate to safe maximum length

@@ -1,3 +1,13 @@
+---
+title: ArenaPulse-AI
+emoji: 🚀
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # 🌌 ArenaPulse-AI (Agentic Environment)
 
 ![Python](https://img.shields.io/badge/python-3.11+-blue.svg)
