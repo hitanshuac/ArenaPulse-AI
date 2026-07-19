@@ -2,6 +2,19 @@
 
 <!-- version list -->
 
+## v1.0.2 (2026-07-19)
+
+### Bug Fixes
+
+- **deploy**: Use gradio wrapper to bypass docker paid tier
+  ([`6df67d1`](https://github.com/hitanshuac/ArenaPulse-AI/commit/6df67d11f7c5b28d518147d68af4192c5c1b33d9))
+
+### Continuous Integration
+
+- Fix hf deployment history pollution by using orphan branch
+  ([`e75c9f2`](https://github.com/hitanshuac/ArenaPulse-AI/commit/e75c9f24f1e07fff7b784eae6e1e586df4233719))
+
+
 ## v1.0.1 (2026-07-19)
 
 ### Bug Fixes
