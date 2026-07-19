@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.0.3 (2026-07-19)
+
+### Bug Fixes
+
+- **deploy**: Unpin gradio to resolve hf conflict
+  ([`35de7b6`](https://github.com/hitanshuac/ArenaPulse-AI/commit/35de7b6178f7e4256499c01dca8cfca0bc99612f))
+
+
 ## v1.0.2 (2026-07-19)
 
 ### Bug Fixes
