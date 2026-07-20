@@ -1,6 +1,6 @@
 import logging
 import os
-import google.generativeai as genai
+from groq import AsyncGroq
 
 logger = logging.getLogger(__name__)
 
@@ -11,10 +11,10 @@ class NarrativeLLMClient:
     """
 
     def __init__(self):
-        self.api_key = os.environ.get("GEMINI_API_KEY")
+        self.api_key = os.environ.get("GROQ_API_KEY")
         self.api_available = True if self.api_key else False
         if self.api_available:
-            genai.configure(api_key=self.api_key)
+            self.client = AsyncGroq(api_key=self.api_key)
 
     async def generate_narrative_stream(self, state_summary: str):
         """
@@ -32,13 +32,16 @@ class NarrativeLLMClient:
         )
 
         try:
-            model = genai.GenerativeModel("gemini-3.5-flash")
-            response = model.generate_content(prompt, stream=True)
+            stream = await self.client.chat.completions.create(
+                model="llama3-70b-8192",
+                messages=[{"role": "user", "content": prompt}],
+                stream=True
+            )
             
-            for chunk in response:
-                if chunk.text:
-                    # Clean the chunk for SSE (replace newlines)
-                    clean_text = chunk.text.replace("\n", " ")
+            async for chunk in stream:
+                content = chunk.choices[0].delta.content
+                if content:
+                    clean_text = content.replace("\n", " ")
                     yield f"data: {clean_text}\n\n"
                     
         except Exception as e:

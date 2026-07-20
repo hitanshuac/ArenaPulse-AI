@@ -7,7 +7,7 @@ python-multipart==0.0.9
 python-dotenv==1.2.2
 
 # === AI / LLM ===
-google-generativeai==0.7.1
+groq==0.9.0
 deep-translator==1.11.4
 
 # === Image Processing (Diagram Compression) ===

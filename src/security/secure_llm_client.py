@@ -4,7 +4,7 @@ import os
 from datetime import UTC, datetime
 from typing import Any
 
-import google.generativeai as genai
+from groq import Groq
 
 
 class SecureLLMClient:
@@ -14,10 +14,10 @@ class SecureLLMClient:
     """
 
     def __init__(self):
-        self.api_key = os.environ.get("GEMINI_API_KEY")
+        self.api_key = os.environ.get("GROQ_API_KEY")
         self.api_available = True if self.api_key else False
         if self.api_available:
-            genai.configure(api_key=self.api_key)
+            self.client = Groq(api_key=self.api_key)
 
         self.response_cache = {}
         self.DAILY_LIMIT = 5000  # Increased for personal learning (originally 15 for Hack2Skill)
@@ -82,18 +82,23 @@ class SecureLLMClient:
         if self.daily_calls_made >= self.DAILY_LIMIT:
             return {"status": "quota_exhausted", "data": None}
 
-        # Pre-flight Defense (LLM01): Truncate to safe maximum length
+        # Pre-flight Defense (LLM01): Truncate to safe maximum length and ensure JSON instruction
         safe_prompt = prompt[:8000]
+        if "json" not in safe_prompt.lower():
+            safe_prompt += "\n\nYou must return the output as a valid JSON object."
 
         try:
             self.daily_calls_made += 1
             self._save_quota()
 
-            model = genai.GenerativeModel("gemini-3.5-flash")
-            response = model.generate_content(safe_prompt, generation_config={"response_mime_type": "application/json"})
+            response = self.client.chat.completions.create(
+                model="llama3-70b-8192",
+                messages=[{"role": "user", "content": safe_prompt}],
+                response_format={"type": "json_object"}
+            )
 
             # Post-flight Defense (LLM06)
-            result = json.loads(response.text)
+            result = json.loads(response.choices[0].message.content)
 
             if state_hash:
                 self.response_cache[state_hash] = dict(result)
