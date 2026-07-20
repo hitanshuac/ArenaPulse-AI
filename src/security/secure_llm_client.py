@@ -20,7 +20,7 @@ class SecureLLMClient:
             genai.configure(api_key=self.api_key)
 
         self.response_cache = {}
-        self.DAILY_LIMIT = 15
+        self.DAILY_LIMIT = 5000  # Increased for personal learning (originally 15 for Hack2Skill)
         self.quota_file = os.path.join("data", "quota.json")
         self.daily_calls_made = self._load_quota()
 

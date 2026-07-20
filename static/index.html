@@ -199,11 +199,20 @@
                         <button onclick="runAgentWorkflow()" class="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs rounded shadow transition-colors focus:outline-none" aria-label="Scan All Zones (Free, 0 tokens)">
                             🔍 Scan All Zones
                         </button>
-                        <button id="analyzeBtn" onclick="analyzeAnomalies()" class="px-3 py-1.5 bg-amber-600/80 hover:bg-amber-600 text-white font-semibold text-xs rounded shadow transition-colors focus:outline-none hidden" aria-label="Request AI Deep Analysis (Uses 1 LLM call)">
-                            🧠 AI Deep Analysis <span id="anomalyBadge" class="ml-1 bg-rose-500 text-white rounded-full px-1.5 py-0.5 text-[9px] font-bold">0</span>
-                        </button>
-                        <span class="text-[8px] text-slate-600 italic">AI uses 1 API call — optional</span>
+                        <div class="flex gap-2">
+                            <button onclick="generateNarrative()" class="px-3 py-1.5 bg-purple-600/80 hover:bg-purple-600 text-white font-semibold text-xs rounded shadow transition-colors focus:outline-none" aria-label="Generate AI Narrative">
+                                📝 Live Narrative
+                            </button>
+                            <button id="analyzeBtn" onclick="analyzeAnomalies()" class="px-3 py-1.5 bg-amber-600/80 hover:bg-amber-600 text-white font-semibold text-xs rounded shadow transition-colors focus:outline-none hidden" aria-label="Request AI Deep Analysis (Uses 1 LLM call)">
+                                🧠 AI Deep Analysis <span id="anomalyBadge" class="ml-1 bg-rose-500 text-white rounded-full px-1.5 py-0.5 text-[9px] font-bold">0</span>
+                            </button>
+                        </div>
+                        <span class="text-[8px] text-slate-600 italic">AI features use API calls</span>
                     </div>
+                </div>
+
+                <div id="narrativeFeed" class="text-xs text-emerald-400 bg-slate-900 p-2.5 rounded border border-slate-800 mb-3 hidden font-serif italic">
+                    <strong>Live Narrative:</strong> <span id="narrativeText"></span>
                 </div>
 
                 <div id="agentSummary" aria-live="polite" class="text-xs text-slate-400 bg-slate-900 p-2.5 rounded border border-slate-800 mb-3">
@@ -673,6 +682,42 @@
                 summaryBox.innerHTML = '<strong>Status:</strong> LLM analysis failed.';
                 traceLog.innerHTML = '<p class="text-rose-500">[ERROR] Failed to connect to spatial analysis endpoint.</p>';
             }
+        }
+
+        // Live Narrative SSE Stream
+        let narrativeSource = null;
+        function generateNarrative() {
+            const feed = document.getElementById('narrativeFeed');
+            const textSpan = document.getElementById('narrativeText');
+            
+            feed.classList.remove('hidden');
+            textSpan.innerHTML = '<span class="text-slate-500 animate-pulse">Connecting to LLM stream...</span>';
+            
+            if (narrativeSource) {
+                narrativeSource.close();
+            }
+            
+            narrativeSource = new EventSource('/api/stadium/narrative-stream');
+            let isFirstChunk = true;
+            
+            narrativeSource.onmessage = function(event) {
+                if (isFirstChunk) {
+                    textSpan.innerHTML = '';
+                    isFirstChunk = false;
+                }
+                const data = event.data;
+                if (data.includes('[SYSTEM]')) {
+                    textSpan.innerHTML += `<br><span class="text-rose-400 font-sans not-italic">${data}</span>`;
+                    narrativeSource.close();
+                } else {
+                    textSpan.innerHTML += data + " ";
+                }
+            };
+            
+            narrativeSource.onerror = function() {
+                textSpan.innerHTML += ' <span class="text-slate-500 text-[10px] font-sans not-italic">[Stream Closed]</span>';
+                narrativeSource.close();
+            };
         }
 
         // Translation endpoint using free Google Translate

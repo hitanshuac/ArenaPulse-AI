@@ -10,12 +10,14 @@ from fastapi.responses import StreamingResponse
 from src.domain.agent import VolunteerAgent
 from src.domain.models import ZoneModel
 from src.domain.state import StadiumStateManager
+from src.domain.narrative_client import NarrativeLLMClient
 
 logger = logging.getLogger(__name__)
 
 api_router = APIRouter(prefix="/api")
 state_manager = StadiumStateManager()
 stadium_agent = VolunteerAgent()
+narrative_client = NarrativeLLMClient()
 
 
 @api_router.get("/stadium", response_model=list[ZoneModel])
@@ -52,6 +54,23 @@ async def stadium_stream():
             await asyncio.sleep(2)
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+
+@api_router.get("/stadium/narrative-stream")
+async def get_stadium_narrative():
+    """Server-Sent Events endpoint pushing unconstrained LLM narrative text."""
+    state = await state_manager.get_all_zones()
+    
+    # Compress state to a readable summary to save tokens
+    summary = []
+    for z in state:
+        pct = (z.get("current_occupancy", 0) / z.get("max_capacity", 1)) * 100
+        if pct > 60:
+            summary.append(f"{z.get('zone_id')} ({pct:.0f}%)")
+    
+    state_str = "Critical zones: " + (", ".join(summary) if summary else "None. All clear.")
+    
+    return StreamingResponse(narrative_client.generate_narrative_stream(state_str), media_type="text/event-stream")
 
 
 @api_router.post("/update-telemetry")
