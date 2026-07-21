@@ -9,20 +9,19 @@ from src.security.secure_llm_client import SecureLLMClient
 @pytest.fixture
 def secure_client():
     # Force api available for testing
-    with patch.dict(os.environ, {"GEMINI_API_KEY": "test_key"}):
-        client = SecureLLMClient()
-        client.daily_calls_made = 0
-        return client
+    with patch.dict(os.environ, {"GROQ_API_KEY": "test_key"}):
+        with patch("src.security.secure_llm_client.Groq"):
+            client = SecureLLMClient()
+            client.daily_calls_made = 0
+            return client
 
 
-@patch("src.security.secure_llm_client.genai.GenerativeModel")
-def test_client_memoization_cache(mock_model_class, secure_client):
+def test_client_memoization_cache(secure_client):
     """Validates that identical state hashes are served from the cache without hitting the SDK."""
-    mock_model_instance = MagicMock()
     mock_response = MagicMock()
-    mock_response.text = '{"decision": "test"}'
-    mock_model_instance.generate_content.return_value = mock_response
-    mock_model_class.return_value = mock_model_instance
+    mock_response.choices = [MagicMock()]
+    mock_response.choices[0].message.content = '{"decision": "test"}'
+    secure_client.client.chat.completions.create.return_value = mock_response
 
     state_data = [{"zone_id": "test", "occupancy": 100}]
 
@@ -39,12 +38,11 @@ def test_client_memoization_cache(mock_model_class, secure_client):
 
     # Still 1 call made!
     assert secure_client.daily_calls_made == 1
-    mock_model_instance.generate_content.assert_called_once()
-
+    secure_client.client.chat.completions.create.assert_called_once()
 
 def test_client_quota_exhaustion(secure_client):
     """Validates that the quota limit is aggressively respected."""
-    secure_client.daily_calls_made = 15
+    secure_client.daily_calls_made = 5000
 
     result = secure_client.generate_content("Test", state_data=None)
     assert result["status"] == "quota_exhausted"

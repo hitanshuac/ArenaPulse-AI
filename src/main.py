@@ -6,14 +6,14 @@ import traceback
 from datetime import UTC, datetime
 
 from dotenv import load_dotenv
+load_dotenv()
+
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from src.domain.state import StadiumStateManager
 from src.routers.api import api_router
-
-load_dotenv()
 
 # Configure global backend logging (stdout only)
 logging.basicConfig(
