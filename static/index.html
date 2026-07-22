@@ -620,7 +620,7 @@
             traceLog.innerHTML = '<p class="text-blue-500">// Running deterministic Math Router (0 tokens)...</p>';
             
             try {
-                const res = await fetch('/api/agent/run', { method: 'POST' });
+                const res = await fetch(window.API_BASE_URL + '/api/agent/run', { method: 'POST' });
                 const d = await res.json();
 
                 summaryBox.innerHTML = `<strong>Status:</strong> ${d.decision}`;
@@ -655,7 +655,7 @@
             traceLog.innerHTML = '<p class="text-amber-500 animate-pulse">// Sending anomalies to Gemini for multi-node flow redistribution analysis...</p>';
             
             try {
-                const res = await fetch('/api/agent/analyze', { method: 'POST' });
+                const res = await fetch(window.API_BASE_URL + '/api/agent/analyze', { method: 'POST' });
                 const d = await res.json();
 
                 summaryBox.innerHTML = `<strong>Status:</strong> ${d.decision}`;
@@ -732,7 +732,7 @@
             formData.append('query', query);
 
             try {
-                const res = await fetch('/api/translate', { method: 'POST', body: formData });
+                const res = await fetch(window.API_BASE_URL + '/api/translate', { method: 'POST', body: formData });
                 const d = await res.json();
 
                 if (d.urgency_level === 'CRITICAL') {
@@ -757,7 +757,7 @@
         // Debug controls
         async function simulateRushHour() {
             try {
-                const res = await fetch('/api/stadium');
+                const res = await fetch(window.API_BASE_URL + '/api/stadium');
                 const zones = await res.json();
                 for (const zone of zones) {
                     // Push Turnstiles to red
@@ -765,14 +765,14 @@
                         const fd = new FormData();
                         fd.append('zone_id', zone.zone_id);
                         fd.append('current_occupancy', Math.floor(zone.max_capacity * 0.95));
-                        await fetch('/api/update-telemetry', { method: 'POST', body: fd });
+                        await fetch(window.API_BASE_URL + '/api/update-telemetry', { method: 'POST', body: fd });
                     }
                     // Push a concourse to orange
                     if (zone.zone_id === 'Main Concourse') {
                         const fd = new FormData();
                         fd.append('zone_id', zone.zone_id);
                         fd.append('current_occupancy', Math.floor(zone.max_capacity * 0.85));
-                        await fetch('/api/update-telemetry', { method: 'POST', body: fd });
+                        await fetch(window.API_BASE_URL + '/api/update-telemetry', { method: 'POST', body: fd });
                     }
                 }
                 runAgentWorkflow();
@@ -784,18 +784,18 @@
         async function triggerMedicalEmergency() {
             const fd = new FormData();
             fd.append('query', "emergencia necesito un medico rapido en bowl NE");
-            await fetch('/api/translate', { method: 'POST', body: fd });
+            await fetch(window.API_BASE_URL + '/api/translate', { method: 'POST', body: fd });
         }
 
         async function resetSimulation() {
             try {
-                const res = await fetch('/api/stadium');
+                const res = await fetch(window.API_BASE_URL + '/api/stadium');
                 const zones = await res.json();
                 for (const zone of zones) {
                     const fd = new FormData();
                     fd.append('zone_id', zone.zone_id);
                     fd.append('current_occupancy', Math.floor(zone.max_capacity * 0.3)); // 30% baseline
-                    await fetch('/api/update-telemetry', { method: 'POST', body: fd });
+                    await fetch(window.API_BASE_URL + '/api/update-telemetry', { method: 'POST', body: fd });
                 }
             } catch (e) {
                 console.error(e);
@@ -804,7 +804,7 @@
 
         async function restoreTopology() {
             try {
-                const res = await fetch('/api/stadium/reset', { method: 'POST' });
+                const res = await fetch(window.API_BASE_URL + '/api/stadium/reset', { method: 'POST' });
                 if (res.ok) {
                     alert('15-node topology restored.');
                 }
@@ -817,7 +817,7 @@
             try {
                 const fd = new FormData();
                 fd.append('phase', phaseName);
-                await fetch('/api/stadium/phase', { method: 'POST', body: fd });
+                await fetch(window.API_BASE_URL + '/api/stadium/phase', { method: 'POST', body: fd });
             } catch (e) {
                 console.error(e);
             }
@@ -833,7 +833,7 @@
             formData.append('file', file);
 
             try {
-                const res = await fetch('/api/upload-csv', { method: 'POST', body: formData });
+                const res = await fetch(window.API_BASE_URL + '/api/upload-csv', { method: 'POST', body: formData });
                 if (res.ok) {
                     alert('Configuration dataset uploaded successfully.');
                     runAgentWorkflow();

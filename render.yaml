@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: arenapulse-ai
+    env: docker
+    dockerfilePath: ./Dockerfile
+    plan: free

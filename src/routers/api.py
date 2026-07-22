@@ -7,17 +7,15 @@ import logging
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
 
-from src.domain.agent import VolunteerAgent
 from src.domain.models import ZoneModel
+from src.domain.service import StadiumApplicationService
 from src.domain.state import StadiumStateManager
-from src.domain.narrative_client import NarrativeLLMClient
 
 logger = logging.getLogger(__name__)
 
 api_router = APIRouter(prefix="/api")
 state_manager = StadiumStateManager()
-stadium_agent = VolunteerAgent()
-narrative_client = NarrativeLLMClient()
+app_service = StadiumApplicationService()
 
 
 @api_router.get("/stadium", response_model=list[ZoneModel])
@@ -39,10 +37,10 @@ async def stadium_stream():
             payload = {
                 "zones": state,
                 "system": {
-                    "quota_used": stadium_agent.llm_client.daily_calls_made,
-                    "quota_limit": stadium_agent.llm_client.DAILY_LIMIT,
-                    "cache_size": len(stadium_agent.llm_client.response_cache),
-                    "llm_trust_failures": stadium_agent.validation_failure_count,
+                    "quota_used": app_service.stadium_agent.llm_client.daily_calls_made,
+                    "quota_limit": app_service.stadium_agent.llm_client.DAILY_LIMIT,
+                    "cache_size": len(app_service.stadium_agent.llm_client.response_cache),
+                    "llm_trust_failures": app_service.stadium_agent.validation_failure_count,
                     "anomaly_count": len(anomaly_queue),
                     "alerts": alerts,
                     "current_phase": state_manager.current_phase,
@@ -60,17 +58,17 @@ async def stadium_stream():
 async def get_stadium_narrative():
     """Server-Sent Events endpoint pushing unconstrained LLM narrative text."""
     state = await state_manager.get_all_zones()
-    
+
     # Compress state to a readable summary to save tokens
     summary = []
     for z in state:
         pct = (z.get("current_occupancy", 0) / z.get("max_capacity", 1)) * 100
         if pct > 60:
             summary.append(f"{z.get('zone_id')} ({pct:.0f}%)")
-    
+
     state_str = "Critical zones: " + (", ".join(summary) if summary else "None. All clear.")
-    
-    return StreamingResponse(narrative_client.generate_narrative_stream(state_str), media_type="text/event-stream")
+
+    return StreamingResponse(app_service.narrative_client.generate_narrative_stream(state_str), media_type="text/event-stream")
 
 
 @api_router.post("/update-telemetry")
@@ -139,31 +137,10 @@ async def run_agent_workflow():
     Runs the Math Router to identify threshold breaches and returns
     the current anomaly queue. The "Run Diagnostics" button calls this freely.
     """
-    state = await state_manager.get_all_zones()
-    if not state:
-        raise HTTPException(status_code=400, detail="Operational state database is empty.")
-
-    result = stadium_agent.process_telemetry(state)
-
-    # Include the current anomaly queue in the response
-    anomaly_queue = await state_manager.get_anomaly_queue()
-    result["anomaly_count"] = len(anomaly_queue)
-    if anomaly_queue:
-        result["execution_trace"].append(
-            f"[Anomaly Queue] {len(anomaly_queue)} pending anomalies detected by flow-rate analysis."
-        )
-        for anomaly in anomaly_queue:
-            a_type = anomaly.get("type", "UNKNOWN")
-            a_zone = anomaly.get("zone_id", "?")
-            if a_type == "FLOW_MISMATCH":
-                result["execution_trace"].append(
-                    f"  → [{a_type}] '{a_zone}': actual flow {anomaly.get('actual_flow_pph', '?')} pph "
-                    f"vs capacity {anomaly.get('capacity_pph', '?')} pph"
-                )
-            else:
-                result["execution_trace"].append(f"  → [{a_type}] '{a_zone}': {anomaly.get('action', 'pending')}")
-
-    return result
+    try:
+        return await app_service.run_agent_workflow()
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @api_router.post("/agent/analyze")
@@ -178,44 +155,7 @@ async def analyze_anomalies():
     The LLM does NOT identify problems (deterministic engine already did).
     The LLM determines which nodes should have flow REDUCED and by how much.
     """
-    anomaly_queue = await state_manager.get_anomaly_queue()
-
-    if not anomaly_queue:
-        return {
-            "decision": "[NO ANOMALIES] Queue is empty. No spatial analysis needed.",
-            "execution_trace": ["[Queue Empty] Run diagnostics first to detect anomalies."],
-        }
-
-    state = await state_manager.get_all_zones()
-
-    # Fire the LLM — single API call for all queued anomalies
-    result = stadium_agent.analyze_spatial_anomaly(anomaly_queue, state)
-
-    # Apply validated redistributions to state if analysis succeeded
-    analyses = result.get("analyses", [])
-    if analyses:
-        await state_manager.snapshot_state()
-        applied_count = 0
-
-        for analysis in analyses:
-            for redist in analysis.get("redistributions", []):
-                zone_id = redist.get("zone_id")
-                reduce_pct = redist.get("reduce_flow_pct", 0)
-                reasoning = redist.get("reasoning", "")
-
-                mitigation_label = f"Flow reduced {reduce_pct}%: {reasoning[:60]}"
-                applied = await state_manager.update_mitigation(zone_id, mitigation_label)
-                if applied:
-                    applied_count += 1
-
-        trace = result.get("execution_trace", [])
-        trace.append(f"[L2 GATE SUMMARY] Applied: {applied_count} flow redistributions")
-        result["execution_trace"] = trace
-
-        # Flush the anomaly queue on successful analysis
-        await state_manager.flush_anomaly_queue()
-
-    return result
+    return await app_service.analyze_anomalies()
 
 
 @api_router.post("/translate")
@@ -228,22 +168,7 @@ async def translate_query(query: str = Form(...)):
     requires_llm_routing=True to signal the frontend that the Commander
     should trigger spatial analysis for crowd routing.
     """
-    if not query.strip():
-        raise HTTPException(status_code=400, detail="Query text must be valid.")
-
-    result = stadium_agent.interpret_fan_query(query)
-
-    # If CRITICAL, auto-queue a medical routing anomaly for LLM analysis
-    if result.get("requires_llm_routing"):
-        await state_manager.append_anomaly(
-            {
-                "type": "MEDICAL_ROUTING",
-                "zone_id": "FIELD_REPORT",
-                "query": query,
-                "translated_en": result.get("translated_response_en", ""),
-                "action": "MEDICAL EMERGENCY — Requires multi-node crowd routing decision",
-                "timestamp": result.get("translated_response_en", ""),
-            }
-        )
-
-    return result
+    try:
+        return await app_service.translate_query(query)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))

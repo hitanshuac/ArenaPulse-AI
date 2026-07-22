@@ -46,3 +46,93 @@ def test_state_update_occupancy():
         assert success_invalid is False
 
     asyncio.run(run_test())
+
+def test_anomaly_queue_operations():
+    manager = StadiumStateManager()
+    manager._init_state()
+    async def run_test():
+        await manager.append_anomaly({"type": "FLOW_MISMATCH", "zone_id": "Gate A"})
+        queue = await manager.get_anomaly_queue()
+        assert len(queue) == 1
+        assert queue[0]["zone_id"] == "Gate A"
+        
+        flushed = await manager.flush_anomaly_queue()
+        assert len(flushed) == 1
+        assert len(await manager.get_anomaly_queue()) == 0
+    asyncio.run(run_test())
+
+def test_snapshot_and_rollback():
+    manager = StadiumStateManager()
+    manager._init_state()
+    async def run_test():
+        await manager.update_zone_occupancy("Gate A", 999)
+        await manager.snapshot_state()
+        await manager.update_zone_occupancy("Gate A", 100)
+        await manager.rollback_state()
+        zones = await manager.get_all_zones()
+        zone_a = next(z for z in zones if z["zone_id"] == "Gate A")
+        assert zone_a["current_occupancy"] == 999
+        
+        assert await manager.rollback_state() is False # nothing to rollback
+    asyncio.run(run_test())
+
+def test_metadata_and_phase():
+    manager = StadiumStateManager()
+    manager._init_state()
+    async def run_test():
+        await manager.set_phase("MATCH")
+        meta = await manager.get_system_metadata()
+        assert meta["current_phase"] == "MATCH"
+        assert meta["match_minute"] == 45
+        assert meta["match_running"] is True
+    asyncio.run(run_test())
+
+def test_update_mitigation():
+    manager = StadiumStateManager()
+    manager._init_state()
+    async def run_test():
+        success = await manager.update_mitigation("Gate A", "Reduce flow")
+        assert success is True
+        zones = await manager.get_all_zones()
+        zone_a = next(z for z in zones if z["zone_id"] == "Gate A")
+        assert zone_a["mitigation_active"] == "Reduce flow"
+        
+        assert await manager.update_mitigation("Invalid", "X") is False
+    asyncio.run(run_test())
+
+def test_apply_bulk_update():
+    manager = StadiumStateManager()
+    manager._init_state()
+    async def run_test():
+        data = [{"zone_id": "Gate A", "node_type": "turnstile", "current_occupancy": 50, "max_capacity": 100, "associated_gates": "", "velocity": 0}]
+        await manager.apply_bulk_update(data)
+        zones = await manager.get_all_zones()
+        assert len(zones) == 1
+        assert zones[0]["zone_id"] == "Gate A"
+    asyncio.run(run_test())
+
+def test_simulate_iot_tick():
+    manager = StadiumStateManager()
+    manager._init_state()
+    async def run_test():
+        manager.match_running = True
+        manager.current_phase = "INGRESS"
+        manager.match_minute = 44
+        await manager.simulate_iot_tick()
+        assert manager.match_minute == 45
+        assert manager.current_phase == "MATCH" # Auto-transition
+        
+        manager.match_minute = 89
+        await manager.simulate_iot_tick()
+        assert manager.match_minute == 90
+        assert manager.current_phase == "EGRESS" # Auto-transition
+        
+        manager.match_minute = 119
+        await manager.simulate_iot_tick()
+        assert manager.match_minute == 120
+        assert manager.match_running is False # Match over
+        
+        alerts = await manager.flush_alerts()
+        assert len(alerts) > 0
+    asyncio.run(run_test())
+

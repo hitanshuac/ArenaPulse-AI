@@ -6,6 +6,7 @@ import traceback
 from datetime import UTC, datetime
 
 from dotenv import load_dotenv
+
 load_dotenv()
 
 from fastapi import FastAPI, HTTPException, Request
@@ -24,6 +25,15 @@ logger = logging.getLogger(__name__)
 app = FastAPI(
     title="ArenaPulse-AI Volunteer Co-Pilot",
     description="Agentic crowd operations & translation control deck for stadium volunteers.",
+)
+
+from fastapi.middleware.cors import CORSMiddleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 

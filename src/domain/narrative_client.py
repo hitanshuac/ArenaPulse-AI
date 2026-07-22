@@ -1,5 +1,6 @@
 import logging
 import os
+
 from groq import AsyncGroq
 
 logger = logging.getLogger(__name__)
@@ -37,13 +38,13 @@ class NarrativeLLMClient:
                 messages=[{"role": "user", "content": prompt}],
                 stream=True
             )
-            
+
             async for chunk in stream:
                 content = chunk.choices[0].delta.content
                 if content:
                     clean_text = content.replace("\n", " ")
                     yield f"data: {clean_text}\n\n"
-                    
+
         except Exception as e:
             logger.error(f"Narrative stream error: {e}")
             yield f"data: [SYSTEM] Error generating narrative: {e}\n\n"
