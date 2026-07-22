@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.1.2 (2026-07-22)
+
+### Bug Fixes
+
+- Parameterize EventSource URLs in index.html
+  ([`47f4219`](https://github.com/hitanshuac/ArenaPulse-AI/commit/47f4219ebe0dbd2ab68651840eb3db1323371e6c))
+
+
 ## v1.1.1 (2026-07-22)
 
 ### Bug Fixes
