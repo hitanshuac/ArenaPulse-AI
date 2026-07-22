@@ -453,7 +453,7 @@
         }
 
         // Initialize SSE Connection
-        const eventSource = new EventSource("/api/stadium/stream");
+        const eventSource = new EventSource(window.API_BASE_URL + "/api/stadium/stream");
         
         eventSource.onmessage = function(event) {
             const payload = JSON.parse(event.data);
@@ -697,7 +697,7 @@
                 narrativeSource.close();
             }
             
-            narrativeSource = new EventSource('/api/stadium/narrative-stream');
+            narrativeSource = new EventSource(window.API_BASE_URL + '/api/stadium/narrative-stream');
             let isFirstChunk = true;
             
             narrativeSource.onmessage = function(event) {
