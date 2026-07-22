@@ -8,6 +8,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
+# Install the local package so 'arenapulse' module is found
+RUN pip install .
+
 # Set permissions for data directory so the app can write error logs or DB files
 RUN chown -R user:user /app
 
