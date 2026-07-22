@@ -2,6 +2,27 @@
 
 <!-- version list -->
 
+## v1.1.1 (2026-07-22)
+
+### Bug Fixes
+
+- Install arenapulse package in Dockerfile
+  ([`974c8d3`](https://github.com/hitanshuac/ArenaPulse-AI/commit/974c8d3e324a765603dbe22065958d887fb31b71))
+
+### Chores
+
+- Add render.yaml for deployment
+  ([`16f57d1`](https://github.com/hitanshuac/ArenaPulse-AI/commit/16f57d1413a850892367ac00f1c920b0416e1cbe))
+
+- Migrate to supported Groq LLaMA model and remove dead-code-cleanup workflow
+  ([`7c20abd`](https://github.com/hitanshuac/ArenaPulse-AI/commit/7c20abdb0cb7d7ab591b27dde3c184ce18084f75))
+
+### Refactoring
+
+- Migrate AI provider from Gemini to Groq (Llama 3 70B)
+  ([`69b215d`](https://github.com/hitanshuac/ArenaPulse-AI/commit/69b215d3d7e5a1bb7b633168c05b3802fe89d2de))
+
+
 ## v1.0.3 (2026-07-19)
 
 ### Bug Fixes
